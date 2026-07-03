@@ -92,48 +92,6 @@ class ArticleRepositoryTest {
     }
 
     @Test
-    void readsRawGzipBytesForAiMaterialization() {
-        long providerId = wikiRepository.upsertProviderByName("Sample Provider");
-        long articleId = repository.insertArticleIfAbsent(
-                "source-raw",
-                "https://example.com/raw",
-                providerId,
-                "제목",
-                "https://example.com/rss",
-                Instant.parse("2026-07-02T00:00:00Z"),
-                "hash-raw"
-        );
-        byte[] rawGzip = new byte[]{31, -117, 8, 0, 1, 2, 3};
-        long rawId = repository.insertRawGzip(articleId, rawGzip, "text/html", 200);
-
-        assertThat(repository.findRawGzipByRawId(rawId)).isEqualTo(rawGzip);
-    }
-
-    @Test
-    void recoversInterruptedAiRunningArticles() {
-        long providerId = wikiRepository.upsertProviderByName("Sample Provider");
-        long articleId = repository.insertArticleIfAbsent(
-                "source-running",
-                "https://example.com/running",
-                providerId,
-                "제목",
-                "https://example.com/rss",
-                Instant.parse("2026-07-02T00:00:00Z"),
-                "hash-running"
-        );
-        jdbcTemplate.update("update articles set ai_status = 'AI_RUNNING' where id = ?", articleId);
-
-        int recovered = repository.recoverInterruptedAiRunning();
-
-        assertThat(recovered).isEqualTo(1);
-        assertThat(jdbcTemplate.queryForObject(
-                "select ai_status from articles where id = ?",
-                String.class,
-                articleId
-        )).isEqualTo("PENDING_AI");
-    }
-
-    @Test
     void recoversInterruptedWikiRunningArticles() {
         long providerId = wikiRepository.upsertProviderByName("Sample Provider");
         long articleId = repository.insertArticleIfAbsent(

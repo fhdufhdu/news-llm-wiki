@@ -1,6 +1,5 @@
 package com.newswiki.repository;
 
-import com.newswiki.dto.AiArticleResult;
 import com.newswiki.dto.Provider;
 import com.newswiki.dto.SectionNavItem;
 import jakarta.persistence.EntityManager;
@@ -128,91 +127,6 @@ public class WikiRepository {
                 .getSingleResult());
     }
 
-    @Transactional
-    public void linkAiResult(AiArticleResult result) {
-        for (AiArticleResult.AiLink topic : result.topics()) {
-            long topicId = upsertTopic(topic.slug(), firstNonBlank(topic.title(), topic.name(), topic.slug()));
-            insertRelation("article_topic", "topic_id", result.articleId(), topicId, "confidence", 1.0);
-        }
-        for (AiArticleResult.AiLink entity : result.entities()) {
-            long entityId = upsertEntity(entity.slug(), firstNonBlank(entity.name(), entity.title(), entity.slug()));
-            insertRelation("article_entity", "entity_id", result.articleId(), entityId, "role", "mentioned");
-        }
-        for (AiArticleResult.AiLink event : result.events()) {
-            long eventId = upsertEvent(event.slug(), firstNonBlank(event.title(), event.name(), event.slug()));
-            insertRelation("article_event", "event_id", result.articleId(), eventId, "role", "evidence");
-        }
-        for (AiArticleResult.AiLink claim : result.claims()) {
-            long claimId = upsertClaim(claim.slug(), firstNonBlank(claim.title(), claim.name(), claim.slug()));
-            insertRelation("article_claim", "claim_id", result.articleId(), claimId, "stance", "reported");
-        }
-    }
-
-    private long upsertTopic(String slug, String title) {
-        entityManager.createNativeQuery("""
-                insert into topics(slug, title, summary, updated_at)
-                values (:slug, :title, '', datetime('now'))
-                on conflict(slug) do update set title = excluded.title, updated_at = datetime('now')
-                """)
-                .setParameter("slug", slug)
-                .setParameter("title", title)
-                .executeUpdate();
-        return idBySlug("topics", slug);
-    }
-
-    private long upsertEntity(String slug, String name) {
-        entityManager.createNativeQuery("""
-                insert into entities(slug, name, entity_type, summary, updated_at)
-                values (:slug, :name, 'unknown', '', datetime('now'))
-                on conflict(slug) do update set name = excluded.name, updated_at = datetime('now')
-                """)
-                .setParameter("slug", slug)
-                .setParameter("name", name)
-                .executeUpdate();
-        return idBySlug("entities", slug);
-    }
-
-    private long upsertEvent(String slug, String title) {
-        entityManager.createNativeQuery("""
-                insert into events(slug, title, summary, status, updated_at)
-                values (:slug, :title, '', 'reported', datetime('now'))
-                on conflict(slug) do update set title = excluded.title, updated_at = datetime('now')
-                """)
-                .setParameter("slug", slug)
-                .setParameter("title", title)
-                .executeUpdate();
-        return idBySlug("events", slug);
-    }
-
-    private long upsertClaim(String slug, String title) {
-        entityManager.createNativeQuery("""
-                insert into claims(slug, title, claim_type, summary, verification_status, updated_at)
-                values (:slug, :title, 'reported', '', 'reported', datetime('now'))
-                on conflict(slug) do update set title = excluded.title, updated_at = datetime('now')
-                """)
-                .setParameter("slug", slug)
-                .setParameter("title", title)
-                .executeUpdate();
-        return idBySlug("claims", slug);
-    }
-
-    private void insertRelation(String table, String targetColumn, long articleId, long targetId, String valueColumn, Object value) {
-        entityManager.createNativeQuery("""
-                insert or ignore into %s(article_id, %s, %s)
-                values (:articleId, :targetId, :value)
-                """.formatted(table, targetColumn, valueColumn))
-                .setParameter("articleId", articleId)
-                .setParameter("targetId", targetId)
-                .setParameter("value", value)
-                .executeUpdate();
-    }
-
-    private long idBySlug(String table, String slug) {
-        return longValue(entityManager.createNativeQuery("select id from " + table + " where slug = :slug")
-                .setParameter("slug", slug)
-                .getSingleResult());
-    }
-
     private Provider provider(Object row) {
         Object[] values = (Object[]) row;
         return new Provider(
@@ -235,15 +149,6 @@ public class WikiRepository {
                 intValue(values[3]),
                 stringValue(values[4])
         );
-    }
-
-    private String firstNonBlank(String... values) {
-        for (String value : values) {
-            if (value != null && !value.isBlank()) {
-                return value;
-            }
-        }
-        return "unknown";
     }
 
     private static long longValue(Object value) {

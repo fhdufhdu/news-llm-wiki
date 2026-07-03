@@ -9,18 +9,15 @@
       <section class="module">
         <div class="module__header">
           <h2 class="module__title" th:text="${article.providerName}">제공사</h2>
-          <span class="status-badge" th:text="${article.aiStatus}">status</span>
+          <span class="status-badge" th:text="${article.wikiStatus}">WIKI</span>
         </div>
         <div class="article-item">
           <div class="meta-row">
             <span th:text="${article.publishedAt}">발행 시각</span>
-            <span th:text="${article.generatedAt}">생성 시각</span>
+            <span th:text="${article.ingestedAt}">수집 시각</span>
           </div>
-          <p class="summary-text" th:text="${article.shortSummary ?: 'AI 위키 데이터 생성 대기 중입니다.'}">요약</p>
-          <p class="summary-text" th:text="${article.durableKnowledge ?: ''}">위키 데이터</p>
-          <div class="meta-row" th:if="${!topics.isEmpty()}">
-            <span class="chip chip--topic" th:each="topic : ${topics}" th:text="${topic}">topic</span>
-          </div>
+          <p class="summary-text" th:text="${'원문 수집 상태: ' + article.rawStatus}">raw status</p>
+          <p class="summary-text" th:text="${'위키 처리 상태: ' + article.wikiStatus}">wiki status</p>
           <a class="article-item__title" th:href="${article.canonicalUrl}" target="_blank" rel="noreferrer">원문 열기</a>
         </div>
       </section>

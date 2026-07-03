@@ -51,12 +51,18 @@ public class ArticleEntity {
     @Column(name = "raw_id")
     private Long rawId;
 
-    @Column(name = "ai_status", nullable = false)
-    private String aiStatus;
+    @Column(name = "raw_status", nullable = false)
+    private String rawStatus;
 
-    @Column(name = "ai_retry_count", nullable = false)
-    private Integer aiRetryCount;
+    @Column(name = "wiki_status", nullable = false)
+    private String wikiStatus;
+
+    @Column(name = "wiki_attempt_count", nullable = false)
+    private Integer wikiAttemptCount;
 
     @Column(name = "last_error")
     private String lastError;
+
+    @Column(name = "wiki_last_error")
+    private String wikiLastError;
 }
