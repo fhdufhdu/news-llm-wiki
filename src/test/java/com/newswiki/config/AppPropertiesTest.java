@@ -25,7 +25,8 @@ class AppPropertiesTest {
         assertThat(props.dailyRebuildMaxBatches()).isEqualTo(25);
         assertThat(props.aiMaxRetries()).isEqualTo(3);
         assertThat(props.articleFetchMaxRetries()).isEqualTo(3);
+        assertThat(props.rssFeedEntryLimit()).isEqualTo(5);
         assertThat(props.articleFetchInsecureSsl()).isFalse();
-        assertThat(props.rawStorageMode()).isEqualTo("DB_GZIP");
+        assertThat(props.rawStorageMode()).isEqualTo("SQLITE_TEXT");
     }
 }

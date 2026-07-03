@@ -231,7 +231,7 @@ class RssIngestServiceTest {
                 rssFeedEntryLimit,
                 2,
                 false,
-                "DB_GZIP"
+                "SQLITE_TEXT"
         );
     }
 

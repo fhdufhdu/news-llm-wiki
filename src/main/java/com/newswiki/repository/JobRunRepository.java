@@ -59,6 +59,39 @@ public class JobRunRepository {
         });
     }
 
+    @Transactional
+    public int interruptRunningJobs(String errorMessage) {
+        return entityManager.unwrap(Session.class).doReturningWork(connection -> {
+            try (var statement = connection.prepareStatement("""
+                    update job_runs
+                       set status = 'INTERRUPTED',
+                           finished_at = ?,
+                           exit_code = ?,
+                           error_message = ?
+                     where status = 'RUNNING'
+                    """)) {
+                statement.setString(1, Instant.now().toString());
+                statement.setInt(2, 130);
+                statement.setString(3, errorMessage);
+                return statement.executeUpdate();
+            }
+        });
+    }
+
+    @Transactional(readOnly = true)
+    public List<String> findRunningJobTypes() {
+        List<?> rows = entityManager.createNativeQuery("""
+                select job_type
+                  from job_runs
+                 where status = 'RUNNING'
+                 order by started_at asc
+                """)
+                .getResultList();
+        return rows.stream()
+                .map(Object::toString)
+                .toList();
+    }
+
     @Transactional(readOnly = true)
     public List<JobRunView> findRecent(int limit) {
         return entityManager.createNativeQuery("""

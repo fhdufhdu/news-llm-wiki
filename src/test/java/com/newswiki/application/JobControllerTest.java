@@ -82,7 +82,7 @@ class JobControllerTest {
                     "/tmp/codex",
                     "gpt-5.5",
                     "workspace-write",
-                    "0 0 * * * *",
+                    "0 */5 * * * *",
                     "0 30 3 * * *",
                     1,
                     1,
@@ -91,9 +91,10 @@ class JobControllerTest {
                     15,
                     10,
                     1,
+                    5,
                     1,
                     false,
-                    "DB_GZIP"
+                    "SQLITE_TEXT"
             ));
         }
 

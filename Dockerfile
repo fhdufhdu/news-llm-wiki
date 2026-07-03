@@ -7,7 +7,7 @@ RUN ./gradlew bootJar --no-daemon
 
 FROM eclipse-temurin:25-jre
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates curl gzip nodejs npm \
+    && apt-get install -y --no-install-recommends ca-certificates curl gzip nodejs npm python3 python3-bs4 \
     && npm install -g @openai/codex \
     && rm -rf /var/lib/apt/lists/*
 RUN useradd --create-home --uid 10001 app

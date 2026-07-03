@@ -35,4 +35,15 @@ class JobLockServiceTest {
         assertThat(first).isTrue();
         assertThat(second).isFalse();
     }
+
+    @Test
+    void expiresActiveLocksAfterRestart() {
+        assertThat(locks.tryAcquire("ingest", "worker-a", Duration.ofMinutes(10))).isTrue();
+
+        int expired = locks.expireAllActiveLocks();
+        boolean acquiredAfterRecovery = locks.tryAcquire("ingest", "worker-b", Duration.ofMinutes(10));
+
+        assertThat(expired).isEqualTo(1);
+        assertThat(acquiredAfterRecovery).isTrue();
+    }
 }

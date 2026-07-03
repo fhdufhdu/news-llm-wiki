@@ -22,6 +22,7 @@ public record AppProperties(
         @Min(1) int articleFetchTimeoutSeconds,
         @Min(1) int rssFetchTimeoutSeconds,
         @Min(1) int ingestParallelism,
+        @Min(0) int rssFeedEntryLimit,
         @Min(1) int articleFetchMaxRetries,
         boolean articleFetchInsecureSsl,
         @NotBlank String rawStorageMode

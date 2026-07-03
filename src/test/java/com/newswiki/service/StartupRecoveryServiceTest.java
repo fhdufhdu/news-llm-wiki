@@ -132,7 +132,7 @@ class StartupRecoveryServiceTest {
                     5,
                     2,
                     false,
-                    "DB_GZIP"
+                    "SQLITE_TEXT"
             );
         }
     }

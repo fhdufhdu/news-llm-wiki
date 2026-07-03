@@ -61,4 +61,17 @@ public class JobLockService {
                 .setParameter("owner", owner)
                 .executeUpdate();
     }
+
+    @Transactional
+    public int expireAllActiveLocks() {
+        Instant now = Instant.now();
+        return entityManager.createNativeQuery("""
+                update job_locks
+                   set locked_until = :now,
+                       updated_at = :now
+                 where locked_until > :now
+                """)
+                .setParameter("now", now.toString())
+                .executeUpdate();
+    }
 }

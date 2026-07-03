@@ -64,4 +64,28 @@ class JobRunRepositoryTest {
                     assertThat(run.errorMessage()).isNull();
                 });
     }
+
+    @Test
+    void interruptsRunningJobsAfterRestart() {
+        repository.start("INGEST", 0);
+        long finishedRunId = repository.start("DAILY_REBUILD", 0);
+        repository.finish(finishedRunId, "SUCCESS", 10, 0, null);
+
+        int interrupted = repository.interruptRunningJobs("Server restarted before job finished");
+
+        assertThat(interrupted).isEqualTo(1);
+        assertThat(repository.findRecent(10))
+                .filteredOn(run -> run.jobType().equals("INGEST"))
+                .singleElement()
+                .satisfies(run -> {
+                    assertThat(run.status()).isEqualTo("INTERRUPTED");
+                    assertThat(run.exitCode()).isEqualTo(130);
+                    assertThat(run.errorMessage()).isEqualTo("Server restarted before job finished");
+                    assertThat(run.finishedAt()).isNotBlank();
+                });
+        assertThat(repository.findRecent(10))
+                .filteredOn(run -> run.jobType().equals("DAILY_REBUILD"))
+                .singleElement()
+                .satisfies(run -> assertThat(run.status()).isEqualTo("SUCCESS"));
+    }
 }
