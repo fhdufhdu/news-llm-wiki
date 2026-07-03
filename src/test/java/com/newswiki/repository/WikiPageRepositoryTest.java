@@ -1,0 +1,95 @@
+package com.newswiki.repository;
+
+import com.newswiki.dto.WikiPageListItem;
+import com.newswiki.dto.WikiSection;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+@SpringBootTest(properties = {
+        "spring.datasource.url=jdbc:sqlite:file:wiki_page_repository_test?mode=memory&cache=shared",
+        "spring.jpa.database-platform=org.hibernate.community.dialect.SQLiteDialect",
+        "spring.jpa.hibernate.ddl-auto=none"
+})
+class WikiPageRepositoryTest {
+    @Autowired
+    WikiPageRepository repository;
+
+    @Autowired
+    JdbcTemplate jdbc;
+
+    @BeforeEach
+    void cleanDatabase() {
+        jdbc.update("delete from wiki_revisions");
+        jdbc.update("delete from wiki_page_sources");
+        jdbc.update("delete from wiki_pages");
+        jdbc.update("delete from wiki_sections");
+        jdbc.update("delete from article_raw_sources");
+        jdbc.update("delete from articles");
+        jdbc.update("delete from providers where slug = 'wiki-test-provider'");
+    }
+
+    @Test
+    void readsActiveSectionsAndPagesFromWikiTables() {
+        long sectionId = insertSection("ai", "AI", "AI 흐름", 10);
+        insertPage(sectionId, "gpu-power", "GPU 전력", "전력 병목", "본문", 90);
+
+        assertThat(repository.findSections()).extracting(WikiSection::slug).containsExactly("ai");
+        assertThat(repository.findPagesBySection("ai")).extracting(WikiPageListItem::title).containsExactly("GPU 전력");
+    }
+
+    @Test
+    void readsPageDetailWithSources() {
+        long providerId = insertProvider();
+        long articleId = insertArticle(providerId);
+        long sectionId = insertSection("ai", "AI", "AI 흐름", 10);
+        long pageId = insertPage(sectionId, "gpu-power", "GPU 전력", "전력 병목", "본문", 90);
+        jdbc.update("""
+                insert into wiki_page_sources(wiki_page_id, article_id, contribution_summary, evidence_type, created_at)
+                values(?, ?, '전력 인프라 근거', 'reported', datetime('now'))
+                """, pageId, articleId);
+
+        var detail = repository.findPageBySlug("gpu-power");
+
+        assertThat(detail.title()).isEqualTo("GPU 전력");
+        assertThat(detail.sources()).hasSize(1);
+        assertThat(detail.sources().getFirst().providerName()).isEqualTo("위키테스트");
+        assertThat(detail.sources().getFirst().contributionSummary()).isEqualTo("전력 인프라 근거");
+    }
+
+    private long insertProvider() {
+        jdbc.update("""
+                insert into providers(slug, name, homepage_url, description, display_order, enabled, created_at, updated_at)
+                values('wiki-test-provider', '위키테스트', 'https://example.com', '', 999, 1, datetime('now'), datetime('now'))
+                """);
+        return jdbc.queryForObject("select id from providers where slug='wiki-test-provider'", Long.class);
+    }
+
+    private long insertArticle(long providerId) {
+        jdbc.update("""
+                insert into articles(source_id, canonical_url, provider_id, title, feed_url, ingested_at, content_hash, raw_status, wiki_status)
+                values('wiki-source-1', 'https://example.com/wiki-article', ?, '근거 기사', 'https://example.com/rss', datetime('now'), 'hash', 'FETCHED', 'DONE')
+                """, providerId);
+        return jdbc.queryForObject("select id from articles where source_id='wiki-source-1'", Long.class);
+    }
+
+    private long insertSection(String slug, String title, String summary, int displayOrder) {
+        jdbc.update("""
+                insert into wiki_sections(slug, title, summary, display_order, status, created_at, updated_at)
+                values(?, ?, ?, ?, 'ACTIVE', datetime('now'), datetime('now'))
+                """, slug, title, summary, displayOrder);
+        return jdbc.queryForObject("select id from wiki_sections where slug=?", Long.class, slug);
+    }
+
+    private long insertPage(long sectionId, String slug, String title, String summary, String body, int importance) {
+        jdbc.update("""
+                insert into wiki_pages(section_id, slug, title, summary, body, importance, status, created_at, updated_at)
+                values(?, ?, ?, ?, ?, ?, 'ACTIVE', datetime('now'), datetime('now'))
+                """, sectionId, slug, title, summary, body, importance);
+        return jdbc.queryForObject("select id from wiki_pages where slug=?", Long.class, slug);
+    }
+}

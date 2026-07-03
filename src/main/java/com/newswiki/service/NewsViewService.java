@@ -4,8 +4,13 @@ import com.newswiki.dto.ArticleListItem;
 import com.newswiki.dto.HomeView;
 import com.newswiki.dto.Provider;
 import com.newswiki.dto.SectionNavItem;
+import com.newswiki.dto.WikiPageDetail;
+import com.newswiki.dto.WikiPageListItem;
+import com.newswiki.dto.WikiSection;
 import com.newswiki.repository.ArticleRepository;
+import com.newswiki.repository.WikiPageRepository;
 import com.newswiki.repository.WikiRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -16,14 +21,45 @@ import java.util.List;
 public class NewsViewService {
     private final ArticleRepository articleRepository;
     private final WikiRepository wikiRepository;
+    private final WikiPageRepository wikiPageRepository;
+
+    @Autowired
+    public NewsViewService(ArticleRepository articleRepository, WikiRepository wikiRepository, WikiPageRepository wikiPageRepository) {
+        this.articleRepository = articleRepository;
+        this.wikiRepository = wikiRepository;
+        this.wikiPageRepository = wikiPageRepository;
+    }
 
     public NewsViewService(ArticleRepository articleRepository, WikiRepository wikiRepository) {
         this.articleRepository = articleRepository;
         this.wikiRepository = wikiRepository;
+        this.wikiPageRepository = null;
     }
 
     public List<SectionNavItem> sectionNav(String activeSlug) {
+        if (wikiPageRepository != null) {
+            String active = activeSlug == null ? "" : activeSlug;
+            return wikiPageRepository.findSections().stream()
+                    .map(section -> new SectionNavItem(section.slug(), section.title(), section.slug().equals(active)))
+                    .toList();
+        }
         return wikiRepository.findEnabledSectionsForNav(activeSlug == null ? "" : activeSlug);
+    }
+
+    public List<WikiSection> wikiSections() {
+        return wikiPageRepository.findSections();
+    }
+
+    public List<WikiPageListItem> recentWikiPages(int limit) {
+        return wikiPageRepository.findRecentPages(limit);
+    }
+
+    public List<WikiPageListItem> wikiPagesBySection(String sectionSlug) {
+        return wikiPageRepository.findPagesBySection(sectionSlug);
+    }
+
+    public WikiPageDetail wikiPage(String slug) {
+        return wikiPageRepository.findPageBySlug(slug);
     }
 
     public HomeView home() {
