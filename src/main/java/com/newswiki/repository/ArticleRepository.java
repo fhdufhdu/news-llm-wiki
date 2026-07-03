@@ -210,6 +210,32 @@ public class ArticleRepository {
     }
 
     @Transactional
+    public int resetRetryableWikiFailures(int maxRetries) {
+        return entityManager.createNativeQuery("""
+                update articles
+                   set wiki_status = 'PENDING',
+                       wiki_locked_at = null,
+                       wiki_last_error = null
+                 where wiki_status = 'FAILED'
+                   and wiki_attempt_count < :maxRetries
+                """)
+                .setParameter("maxRetries", maxRetries)
+                .executeUpdate();
+    }
+
+    @Transactional(readOnly = true)
+    public int countPendingWikiArticles() {
+        Number count = (Number) entityManager.createNativeQuery("""
+                select count(*)
+                  from articles a
+                  join article_raw_sources r on r.article_id = a.id
+                 where a.wiki_status = 'PENDING'
+                """)
+                .getSingleResult();
+        return count == null ? 0 : count.intValue();
+    }
+
+    @Transactional
     public int recoverInterruptedAiRunning() {
         return entityManager.createNativeQuery("""
                 update articles

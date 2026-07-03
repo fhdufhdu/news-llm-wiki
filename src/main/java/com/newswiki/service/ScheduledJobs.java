@@ -15,26 +15,26 @@ public class ScheduledJobs {
     private final JobLockService locks;
     private final JobRunRepository runs;
     private final RssIngestService ingestService;
-    private final AiOrchestrationService aiService;
+    private final CodexWikiService wikiService;
     private final ArticleRepository articleRepository;
     private final int dailyRebuildMaxBatches;
-    private final int aiMaxRetries;
+    private final int wikiMaxRetries;
 
     public ScheduledJobs(
             JobLockService locks,
             JobRunRepository runs,
             RssIngestService ingestService,
-            AiOrchestrationService aiService,
+            CodexWikiService wikiService,
             ArticleRepository articleRepository,
             AppProperties properties
     ) {
         this.locks = locks;
         this.runs = runs;
         this.ingestService = ingestService;
-        this.aiService = aiService;
+        this.wikiService = wikiService;
         this.articleRepository = articleRepository;
         this.dailyRebuildMaxBatches = properties.dailyRebuildMaxBatches();
-        this.aiMaxRetries = properties.aiMaxRetries();
+        this.wikiMaxRetries = properties.aiMaxRetries();
     }
 
     @Scheduled(cron = "${newswiki.ingest-cron}")
@@ -63,48 +63,39 @@ public class ScheduledJobs {
                 + "개, 신규 기사 " + result.articlesSaved()
                 + "개, feed 오류 " + result.feedErrors()
                 + "개, article 오류 " + result.articleErrors() + "개");
-        if (result.articlesSaved() > 0) {
-            runs.appendLog(runId, "INFO", "AI 작업 시작: 신규 기사 " + result.articlesSaved() + "개");
-            var aiResult = aiService.runPendingArticleBatch(runId, (level, message) -> runs.appendLog(runId, level, message));
-            runs.appendLog(runId, "INFO", "AI 작업 완료: 입력 " + aiResult.inputCount()
-                    + "개, 성공 " + aiResult.succeeded()
-                    + "개, 실패 " + aiResult.failed()
-                    + "개, detail=" + aiResult.detail());
+        int pendingWikiArticles = articleRepository.countPendingWikiArticles();
+        if (pendingWikiArticles > 0) {
+            runs.appendLog(runId, "INFO", "위키 작업 시작: pending " + pendingWikiArticles + "개");
+            var wikiResult = wikiService.runPendingWikiBatch(runId, (level, message) -> runs.appendLog(runId, level, message));
+            runs.appendLog(runId, "INFO", "위키 작업 완료: 입력 " + wikiResult.inputCount()
+                    + "개, detail=" + wikiResult.detail());
         } else {
-            runs.appendLog(runId, "INFO", "신규 기사가 없어 AI 작업을 건너뜀");
+            runs.appendLog(runId, "INFO", "위키 처리 대기 기사가 없어 위키 작업을 건너뜀");
         }
         return result.articlesSaved();
     }
 
     private int dailyRebuild(long runId) {
-        int resetFailed = articleRepository.resetRetryableAiFailures(aiMaxRetries);
-        runs.appendLog(runId, "INFO", "DAILY_REBUILD 재시도 대상 AI_FAILED 복구: " + resetFailed + "개");
+        int resetFailed = articleRepository.resetRetryableWikiFailures(wikiMaxRetries);
+        runs.appendLog(runId, "INFO", "DAILY_REBUILD 재시도 대상 WIKI_FAILED 복구: " + resetFailed + "개");
 
-        int totalSucceeded = 0;
         int totalInput = 0;
-        int totalFailed = 0;
         for (int batch = 1; batch <= dailyRebuildMaxBatches; batch++) {
             int batchNo = batch;
-            runs.appendLog(runId, "INFO", "DAILY_REBUILD AI batch " + batchNo + " 시작");
-            var aiResult = aiService.runPendingArticleBatch(runId, (level, message) -> runs.appendLog(runId, level, "DAILY_REBUILD AI batch " + batchNo + " - " + message));
-            if (aiResult.inputCount() == 0) {
-                runs.appendLog(runId, "INFO", "DAILY_REBUILD 처리할 AI backlog가 없음");
+            runs.appendLog(runId, "INFO", "DAILY_REBUILD wiki batch " + batchNo + " 시작");
+            var wikiResult = wikiService.runPendingWikiBatch(runId, (level, message) -> runs.appendLog(runId, level, "DAILY_REBUILD wiki batch " + batchNo + " - " + message));
+            if (wikiResult.inputCount() == 0) {
+                runs.appendLog(runId, "INFO", "DAILY_REBUILD 처리할 wiki backlog가 없음");
                 break;
             }
-            totalInput += aiResult.inputCount();
-            totalSucceeded += aiResult.succeeded();
-            totalFailed += aiResult.failed();
-            runs.appendLog(runId, "INFO", "DAILY_REBUILD AI batch " + batch
-                    + ": 입력 " + aiResult.inputCount()
-                    + "개, 성공 " + aiResult.succeeded()
-                    + "개, 실패 " + aiResult.failed()
-                    + "개, detail=" + aiResult.detail());
+            totalInput += wikiResult.inputCount();
+            runs.appendLog(runId, "INFO", "DAILY_REBUILD wiki batch " + batch
+                    + ": 입력 " + wikiResult.inputCount()
+                    + "개, detail=" + wikiResult.detail());
         }
-        runs.appendLog(runId, "INFO", "DAILY_REBUILD AI backlog 요약: 입력 " + totalInput
-                + "개, 성공 " + totalSucceeded
-                + "개, 실패 " + totalFailed
+        runs.appendLog(runId, "INFO", "DAILY_REBUILD wiki backlog 요약: 입력 " + totalInput
                 + "개, maxBatches=" + dailyRebuildMaxBatches);
-        return totalSucceeded;
+        return totalInput;
     }
 
     private void runLocked(String lockName, String jobType, JobBody body) {
