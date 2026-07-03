@@ -27,7 +27,7 @@ public class SectionController {
                 .map(SectionNavItem::title)
                 .findFirst()
                 .orElse("섹션"));
-        model.addAttribute("articles", newsViewService.latestArticles());
+        model.addAttribute("pages", newsViewService.wikiPagesBySection(slug));
         return "pages/sections";
     }
 }

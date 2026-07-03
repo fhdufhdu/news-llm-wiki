@@ -8,12 +8,20 @@
       <h1 class="page-title" th:text="${sectionTitle}">섹션</h1>
       <section class="module">
         <div class="module__header">
-          <h2 class="module__title">섹션 요약</h2>
-          <span class="status-badge" th:text="${articles.size() + ' articles'}">0 articles</span>
+          <h2 class="module__title">위키 문서</h2>
+          <span class="status-badge" th:text="${pages.size() + ' pages'}">0 pages</span>
         </div>
-        <div class="major-list">
-          <div class="major-item" th:each="item : ${articles}">
-            <div th:replace="~{fragments/article-list-item :: articleItem(${item})}"></div>
+        <div class="wiki-page-list">
+          <article class="wiki-page-card" th:each="page : ${pages}">
+            <a class="wiki-page-card__title" th:href="@{/wiki/{slug}(slug=${page.slug})}" th:text="${page.title}">위키 문서</a>
+            <p class="summary-text" th:text="${page.summary}">요약</p>
+            <div class="meta-row">
+              <span th:text="${'importance ' + page.importance}">importance</span>
+              <span th:text="${page.updatedAt}">updated</span>
+            </div>
+          </article>
+          <div class="article-item" th:if="${pages.isEmpty()}">
+            <p class="summary-text">이 섹션에는 아직 위키 문서가 없습니다.</p>
           </div>
         </div>
       </section>
@@ -24,7 +32,7 @@
           <h2 class="module__title">관련 위키</h2>
         </div>
         <div class="article-item">
-          <p class="summary-text">AI 위키 데이터가 생성된 기사는 기사 카드 하단의 topic 칩으로 연결됩니다.</p>
+          <p class="summary-text">섹션은 Codex가 DB에서 생성, 수정, 삭제합니다. 화면은 현재 DB 상태를 그대로 표시합니다.</p>
         </div>
       </section>
     </aside>

@@ -1,33 +1,48 @@
 <!doctype html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layout/base :: html(content=~{::content}, pageTitle='위키 - News Wiki')}">
+      th:replace="~{layout/base :: html(content=~{::content}, pageTitle=${page != null ? page.title + ' - News Wiki' : '위키 - News Wiki'})}">
 <body>
 <th:block th:fragment="content">
   <div class="page-grid">
     <section>
-      <h1 class="page-title" th:text="${topic != null ? topic.title : '위키'}">위키</h1>
-      <section class="module">
+      <article class="wiki-document" th:if="${page != null}">
+        <h1 class="page-title" th:text="${page.title}">위키 문서</h1>
+        <p class="wiki-summary" th:text="${page.summary}">요약</p>
+        <section class="wiki-body" th:utext="${page.body}">본문</section>
+      </article>
+
+      <section class="module" th:if="${page == null}">
         <div class="module__header">
-          <h2 class="module__title">지식 베이스</h2>
-          <span class="status-badge" th:text="${topics.size() + ' topics'}">0 topics</span>
+          <h2 class="module__title">위키 문서</h2>
+          <span class="status-badge" th:text="${pages.size() + ' pages'}">0 pages</span>
         </div>
-        <div class="article-item" th:if="${topic != null}">
-          <p class="summary-text" th:text="${topic.summary}">토픽 요약</p>
-          <div class="meta-row">
-            <span th:text="${topic.articleCount + ' sources'}">0 sources</span>
-            <span th:text="${topic.updatedAt}">updated</span>
-          </div>
-        </div>
-        <div class="article-item" th:each="item : ${topics}">
-          <a class="article-item__title" th:href="@{/topics/{slug}(slug=${item.slug})}" th:text="${item.title}">토픽</a>
-          <div class="meta-row">
-            <span th:text="${item.articleCount + ' sources'}">0 sources</span>
-            <span th:text="${item.updatedAt}">updated</span>
-          </div>
-          <p class="summary-text" th:text="${item.summary}">요약</p>
+        <div class="wiki-page-list">
+          <article class="wiki-page-card" th:each="item : ${pages}">
+            <a class="wiki-page-card__title" th:href="@{/wiki/{slug}(slug=${item.slug})}" th:text="${item.title}">문서</a>
+            <p class="summary-text" th:text="${item.summary}">요약</p>
+            <div class="meta-row">
+              <span th:text="${'importance ' + item.importance}">importance</span>
+              <span th:text="${item.updatedAt}">updated</span>
+            </div>
+          </article>
         </div>
       </section>
     </section>
+
+    <aside th:if="${page != null}">
+      <section class="module wiki-sources">
+        <div class="module__header">
+          <h2 class="module__title">출처</h2>
+          <span class="status-badge" th:text="${page.sources.size() + ' sources'}">0 sources</span>
+        </div>
+        <div class="article-item" th:each="source : ${page.sources}">
+          <a class="article-item__title"
+             th:href="${source.canonicalUrl}"
+             th:text="${source.providerName + ' - ' + source.title}">출처</a>
+          <p class="summary-text" th:text="${source.contributionSummary}">반영 내용</p>
+        </div>
+      </section>
+    </aside>
   </div>
 </th:block>
 </body>

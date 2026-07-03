@@ -8,18 +8,26 @@
       <h1 class="page-title" th:text="${view.title}">오늘의 뉴스</h1>
       <section class="frontpage-summary">
         <div class="meta-row">
-          <span th:text="${view.sourceCount + ' sources'}">0 sources</span>
+          <span th:text="${pages.size() + ' wiki pages'}">0 wiki pages</span>
           <span th:text="${view.generatedAt}">생성 대기</span>
         </div>
-        <p class="summary-text" th:text="${view.summary}">오늘 요약</p>
+        <p class="summary-text">수집된 원문을 바탕으로 Codex가 갱신한 위키 문서를 표시합니다.</p>
       </section>
       <section class="module">
         <div class="module__header">
-          <h2 class="module__title">주요 기사</h2>
+          <h2 class="module__title">최근 갱신된 위키</h2>
         </div>
-        <div class="major-list">
-          <div class="major-item" th:each="item : ${view.majorArticles}">
-            <div th:replace="~{fragments/article-list-item :: articleItem(${item})}"></div>
+        <div class="wiki-page-list">
+          <article class="wiki-page-card" th:each="page : ${pages}">
+            <a class="wiki-page-card__title" th:href="@{/wiki/{slug}(slug=${page.slug})}" th:text="${page.title}">위키 문서</a>
+            <p class="summary-text" th:text="${page.summary}">요약</p>
+            <div class="meta-row">
+              <span th:text="${'importance ' + page.importance}">importance</span>
+              <span th:text="${page.updatedAt}">updated</span>
+            </div>
+          </article>
+          <div class="article-item" th:if="${pages.isEmpty()}">
+            <p class="summary-text">아직 위키 문서가 없습니다. RSS 수집 후 위키 작업이 완료되면 여기에 표시됩니다.</p>
           </div>
         </div>
       </section>
@@ -30,8 +38,8 @@
           <h2 class="module__title">작업 상태</h2>
         </div>
         <div class="article-item">
-          <span class="status-badge">PENDING</span>
-          <p class="summary-text">최근 수집과 AI 작업 상태가 여기에 표시됩니다.</p>
+          <span class="status-badge">WIKI</span>
+          <p class="summary-text">원본 수집은 서버가 수행하고, 위키 데이터 생성은 Codex가 SQLite에 직접 기록합니다.</p>
         </div>
       </section>
       <section class="module">
