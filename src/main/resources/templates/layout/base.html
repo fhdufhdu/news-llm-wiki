@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:fragment="html(content, pageTitle)">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title th:text="${pageTitle ?: 'News Wiki'}">News Wiki</title>
+  <link rel="stylesheet" th:href="@{/css/tokens.css}">
+  <link rel="stylesheet" th:href="@{/css/base.css}">
+  <link rel="stylesheet" th:href="@{/css/layout.css}">
+  <link rel="stylesheet" th:href="@{/css/components.css}">
+  <link rel="stylesheet" th:href="@{/css/pages.css}">
+</head>
+<body>
+  <header th:replace="~{fragments/header :: header}"></header>
+  <nav th:replace="~{fragments/nav :: nav}"></nav>
+  <main class="site-shell" th:insert="${content}"></main>
+</body>
+</html>

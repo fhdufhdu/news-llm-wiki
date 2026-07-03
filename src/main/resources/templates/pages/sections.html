@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: html(content=~{::content}, pageTitle=${sectionTitle + ' - News Wiki'})}">
+<body>
+<th:block th:fragment="content">
+  <div class="page-grid">
+    <section>
+      <h1 class="page-title" th:text="${sectionTitle}">섹션</h1>
+      <section class="module">
+        <div class="module__header">
+          <h2 class="module__title">섹션 요약</h2>
+          <span class="status-badge" th:text="${articles.size() + ' articles'}">0 articles</span>
+        </div>
+        <div class="major-list">
+          <div class="major-item" th:each="item : ${articles}">
+            <div th:replace="~{fragments/article-list-item :: articleItem(${item})}"></div>
+          </div>
+        </div>
+      </section>
+    </section>
+    <aside>
+      <section class="module">
+        <div class="module__header">
+          <h2 class="module__title">관련 위키</h2>
+        </div>
+        <div class="article-item">
+          <p class="summary-text">AI 위키 데이터가 생성된 기사는 기사 카드 하단의 topic 칩으로 연결됩니다.</p>
+        </div>
+      </section>
+    </aside>
+  </div>
+</th:block>
+</body>
+</html>

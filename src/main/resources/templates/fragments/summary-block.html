@@ -1,0 +1,9 @@
+<section class="module" th:fragment="summaryBlock(block)" xmlns:th="http://www.thymeleaf.org">
+  <div class="module__header">
+    <h2 class="module__title" th:text="${block.title}">요약</h2>
+    <span class="meta-row" th:text="${block.sourceCount + ' sources · ' + block.generatedAt}">0 sources</span>
+  </div>
+  <div class="article-item">
+    <p class="summary-text" th:text="${block.summary}">요약 내용</p>
+  </div>
+</section>

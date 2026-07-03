@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: html(content=~{::content}, pageTitle='작업 - News Wiki')}">
+<body>
+<th:block th:fragment="content">
+  <div class="page-grid">
+    <section>
+      <h1 class="page-title">작업</h1>
+      <section class="module">
+        <div class="module__header">
+          <h2 class="module__title">강제 실행</h2>
+        </div>
+        <div class="article-item job-actions">
+          <form method="post" th:action="@{/jobs/run/ingest}">
+            <button class="command-button" type="submit">RSS 수집 실행</button>
+          </form>
+          <form method="post" th:action="@{/jobs/run/rebuild}">
+            <button class="command-button command-button--secondary" type="submit">위키 재빌드 실행</button>
+          </form>
+        </div>
+      </section>
+      <section class="module">
+        <div class="module__header">
+          <h2 class="module__title">최근 실행</h2>
+        </div>
+        <div class="article-item" th:if="${#lists.isEmpty(jobRuns)}">
+          <p class="summary-text">아직 실행된 작업이 없습니다.</p>
+        </div>
+        <article class="article-item" th:each="run : ${jobRuns}">
+          <span class="status-badge" th:text="${run.status}">STATUS</span>
+          <a class="article-item__title" th:text="${run.jobType}">JOB</a>
+          <div class="meta-row">
+            <span th:text="${run.startedAt}">started</span>
+            <span th:text="${run.outputCount + ' outputs'}">0 outputs</span>
+          </div>
+          <p class="summary-text" th:if="${run.errorMessage != null}" th:text="${run.errorMessage}">error</p>
+        </article>
+      </section>
+      <section class="module">
+        <div class="module__header">
+          <h2 class="module__title">실시간 로그</h2>
+          <span class="meta-row">1초마다 갱신</span>
+        </div>
+        <pre id="job-log-stream" class="job-log-stream"
+             th:text="${#strings.isEmpty(jobLogText) ? '아직 로그가 없습니다.' : jobLogText}">아직 로그가 없습니다.</pre>
+      </section>
+    </section>
+  </div>
+  <script>
+    let pendingJobLogText = null;
+
+    function isSelectingJobLogs(target) {
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+        return false;
+      }
+      const range = selection.getRangeAt(0);
+      return target.contains(range.commonAncestorContainer)
+          || target.contains(range.startContainer)
+          || target.contains(range.endContainer);
+    }
+
+    function renderJobLogs(target, text) {
+      const nextText = text || '아직 로그가 없습니다.';
+      if (target.textContent === nextText) {
+        return;
+      }
+      const wasAtBottom = target.scrollTop + target.clientHeight >= target.scrollHeight - 12;
+      target.textContent = nextText;
+      if (wasAtBottom) {
+        target.scrollTop = target.scrollHeight;
+      }
+    }
+
+    async function refreshJobLogs() {
+      const target = document.getElementById('job-log-stream');
+      if (!target) return;
+      try {
+        const response = await fetch('/jobs/logs', {headers: {'Accept': 'text/plain'}});
+        if (response.ok) {
+          const text = await response.text();
+          if (isSelectingJobLogs(target)) {
+            pendingJobLogText = text;
+            return;
+          }
+          renderJobLogs(target, text);
+          pendingJobLogText = null;
+        }
+      } catch (error) {
+        if (!isSelectingJobLogs(target)) {
+          renderJobLogs(target, target.textContent + '\n로그 갱신 실패: ' + error);
+        }
+      }
+    }
+
+    document.addEventListener('selectionchange', () => {
+      const target = document.getElementById('job-log-stream');
+      if (!target || pendingJobLogText === null || isSelectingJobLogs(target)) {
+        return;
+      }
+      renderJobLogs(target, pendingJobLogText);
+      pendingJobLogText = null;
+    });
+
+    refreshJobLogs();
+    window.setInterval(refreshJobLogs, 1000);
+  </script>
+</th:block>
+</body>
+</html>

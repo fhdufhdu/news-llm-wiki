@@ -1,0 +1,5 @@
+<span class="chip"
+      th:fragment="wikiChip(label, kind)"
+      th:classappend="${kind == 'topic'} ? ' chip--topic' : (${kind == 'claim'} ? ' chip--claim' : (${kind == 'event'} ? ' chip--event' : ''))"
+      th:text="${label}"
+      xmlns:th="http://www.thymeleaf.org">chip</span>

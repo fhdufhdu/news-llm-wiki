@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: html(content=~{::content}, pageTitle='설정 - News Wiki')}">
+<body>
+<th:block th:fragment="content">
+  <div class="page-grid">
+    <section>
+      <h1 class="page-title">설정</h1>
+      <section class="module">
+        <div class="module__header">
+          <h2 class="module__title">시스템 설정</h2>
+        </div>
+        <div class="article-item">
+          <p class="summary-text">환경변수와 Docker Compose 설정으로 관리됩니다.</p>
+        </div>
+      </section>
+    </section>
+  </div>
+</th:block>
+</body>
+</html>

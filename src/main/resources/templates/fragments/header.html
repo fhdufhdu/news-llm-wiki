@@ -1,0 +1,12 @@
+<header class="site-header" th:fragment="header" xmlns:th="http://www.thymeleaf.org">
+  <div class="site-shell site-header__inner">
+    <a class="site-logo" th:href="@{/}">News Wiki</a>
+    <form role="search" method="get" action="/search">
+      <input class="site-search" type="search" name="q" placeholder="기사, 주제, 제공사 검색">
+    </form>
+    <div class="site-actions">
+      <a th:href="@{/jobs}">작업</a>
+      <a th:href="@{/settings}">설정</a>
+    </div>
+  </div>
+</header>

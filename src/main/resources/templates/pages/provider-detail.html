@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: html(content=~{::content}, pageTitle=${provider.name + ' - News Wiki'})}">
+<body>
+<th:block th:fragment="content">
+  <div class="page-grid">
+    <section>
+      <h1 class="page-title" th:text="${provider.name}">제공사</h1>
+      <section class="module">
+        <div class="module__header">
+          <h2 class="module__title">제공사 기사</h2>
+          <span class="status-badge" th:text="${articles.size() + ' articles'}">0 articles</span>
+        </div>
+        <div class="major-list">
+          <div class="major-item" th:each="item : ${articles}">
+            <div th:replace="~{fragments/article-list-item :: articleItem(${item})}"></div>
+          </div>
+        </div>
+      </section>
+    </section>
+  </div>
+</th:block>
+</body>
+</html>

@@ -1,0 +1,37 @@
+services:
+  news-wiki:
+    build: .
+    image: news-wiki:latest
+    container_name: news-wiki
+    restart: unless-stopped
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    environment:
+      SERVER_PORT: 8080
+      SQLITE_PATH: /app/data/newswiki.sqlite
+      RSS_SOURCES_PATH: /app/config/rss-sources.yaml
+      DATA_DIR: /app/data
+      CODEX_HOME: /home/app/.codex
+      TMPDIR: /home/app/.codex/tmp
+      NODE_TLS_REJECT_UNAUTHORIZED: ${NODE_TLS_REJECT_UNAUTHORIZED:-0}
+      JAVA_TOOL_OPTIONS: --enable-native-access=ALL-UNNAMED
+      CODEX_MODEL: ${CODEX_MODEL:-gpt-5.5}
+      CODEX_SANDBOX: danger-full-access
+      INGEST_CRON: ${INGEST_CRON:-0 0 * * * *}
+      DAILY_REBUILD_CRON: ${DAILY_REBUILD_CRON:-0 30 3 * * *}
+      DAILY_REBUILD_MAX_BATCHES: ${DAILY_REBUILD_MAX_BATCHES:-25}
+      AI_MAX_RETRIES: ${AI_MAX_RETRIES:-3}
+      AI_BATCH_SIZE: ${AI_BATCH_SIZE:-80}
+      AI_TIMEOUT_SECONDS: ${AI_TIMEOUT_SECONDS:-1800}
+      INGEST_PARALLELISM: ${INGEST_PARALLELISM:-6}
+      ARTICLE_FETCH_MAX_RETRIES: ${ARTICLE_FETCH_MAX_RETRIES:-3}
+      ARTICLE_FETCH_INSECURE_SSL: ${ARTICLE_FETCH_INSECURE_SSL:-false}
+      RAW_STORAGE_MODE: DB_GZIP
+    volumes:
+      - ./data:/app/data
+      - ./rss-sources.yaml:/app/config/rss-sources.yaml:ro
+      - codex-home:/home/app/.codex
+    mem_limit: 1536m
+
+volumes:
+  codex-home:
