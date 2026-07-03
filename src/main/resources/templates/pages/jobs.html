@@ -39,7 +39,7 @@
       <section class="module">
         <div class="module__header">
           <h2 class="module__title">실시간 로그</h2>
-          <span class="meta-row">1초마다 갱신</span>
+          <span class="meta-row">3초마다 갱신</span>
         </div>
         <pre id="job-log-stream" class="job-log-stream"
              th:text="${#strings.isEmpty(jobLogText) ? '아직 로그가 없습니다.' : jobLogText}">아직 로그가 없습니다.</pre>
@@ -103,7 +103,7 @@
     });
 
     refreshJobLogs();
-    window.setInterval(refreshJobLogs, 1000);
+    window.setInterval(refreshJobLogs, 3000);
   </script>
 </th:block>
 </body>

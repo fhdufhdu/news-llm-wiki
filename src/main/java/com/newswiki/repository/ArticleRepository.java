@@ -247,6 +247,18 @@ public class ArticleRepository {
     }
 
     @Transactional
+    public int recoverInterruptedWikiRunning() {
+        return entityManager.createNativeQuery("""
+                update articles
+                   set wiki_status = 'PENDING',
+                       wiki_locked_at = null,
+                       wiki_last_error = 'Server restarted while wiki processing was running'
+                 where wiki_status = 'RUNNING'
+                """)
+                .executeUpdate();
+    }
+
+    @Transactional
     public void saveRawHtml(long articleId, String rawHtml, String contentHash, int httpStatus) {
         String now = Instant.now().toString();
         entityManager.createNativeQuery("""

@@ -132,4 +132,33 @@ class ArticleRepositoryTest {
                 articleId
         )).isEqualTo("PENDING_AI");
     }
+
+    @Test
+    void recoversInterruptedWikiRunningArticles() {
+        long providerId = wikiRepository.upsertProviderByName("Sample Provider");
+        long articleId = repository.insertArticleIfAbsent(
+                "source-wiki-running",
+                "https://example.com/wiki-running",
+                providerId,
+                "제목",
+                "https://example.com/rss",
+                Instant.parse("2026-07-02T00:00:00Z"),
+                "hash-wiki-running"
+        );
+        jdbcTemplate.update("""
+                update articles
+                   set wiki_status = 'RUNNING',
+                       wiki_locked_at = '2026-07-03T00:00:00Z'
+                 where id = ?
+                """, articleId);
+
+        int recovered = repository.recoverInterruptedWikiRunning();
+
+        assertThat(recovered).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject(
+                "select wiki_status from articles where id = ?",
+                String.class,
+                articleId
+        )).isEqualTo("PENDING");
+    }
 }
