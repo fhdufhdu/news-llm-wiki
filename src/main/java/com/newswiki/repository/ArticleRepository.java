@@ -114,20 +114,65 @@ public class ArticleRepository {
     }
 
     @Transactional
-    public void saveArticleNote(long articleId, String shortSummary, String durableKnowledgeJson, String durability, long jobRunId) {
+    public void saveArticleNote(
+            long articleId,
+            String shortSummary,
+            String contextSummary,
+            String whyItMatters,
+            String keyFactsJson,
+            String durableKnowledgeJson,
+            String transientUpdate,
+            String sourceAssessment,
+            String durability,
+            long jobRunId
+    ) {
         entityManager.createNativeQuery("""
-                insert into article_notes(article_id, short_summary, durable_knowledge, durability, generated_by_job_id, generated_at)
-                values (:articleId, :shortSummary, :durableKnowledge, :durability, :jobRunId, :generatedAt)
+                insert into article_notes(
+                    article_id,
+                    short_summary,
+                    context_summary,
+                    why_it_matters,
+                    key_facts,
+                    durable_knowledge,
+                    transient_update,
+                    source_assessment,
+                    durability,
+                    generated_by_job_id,
+                    generated_at
+                )
+                values (
+                    :articleId,
+                    :shortSummary,
+                    :contextSummary,
+                    :whyItMatters,
+                    :keyFacts,
+                    :durableKnowledge,
+                    :transientUpdate,
+                    :sourceAssessment,
+                    :durability,
+                    :jobRunId,
+                    :generatedAt
+                )
                 on conflict(article_id) do update set
                     short_summary = excluded.short_summary,
+                    context_summary = excluded.context_summary,
+                    why_it_matters = excluded.why_it_matters,
+                    key_facts = excluded.key_facts,
                     durable_knowledge = excluded.durable_knowledge,
+                    transient_update = excluded.transient_update,
+                    source_assessment = excluded.source_assessment,
                     durability = excluded.durability,
                     generated_by_job_id = excluded.generated_by_job_id,
                     generated_at = excluded.generated_at
                 """)
                 .setParameter("articleId", articleId)
                 .setParameter("shortSummary", shortSummary)
+                .setParameter("contextSummary", contextSummary == null ? "" : contextSummary)
+                .setParameter("whyItMatters", whyItMatters == null ? "" : whyItMatters)
+                .setParameter("keyFacts", keyFactsJson == null ? "[]" : keyFactsJson)
                 .setParameter("durableKnowledge", durableKnowledgeJson)
+                .setParameter("transientUpdate", transientUpdate == null ? "" : transientUpdate)
+                .setParameter("sourceAssessment", sourceAssessment == null ? "" : sourceAssessment)
                 .setParameter("durability", durability == null || durability.isBlank() ? "transient" : durability)
                 .setParameter("jobRunId", jobRunId)
                 .setParameter("generatedAt", Instant.now().toString())
@@ -162,6 +207,61 @@ public class ArticleRepository {
                 """)
                 .setParameter("maxRetries", maxRetries)
                 .executeUpdate();
+    }
+
+    @Transactional
+    public int recoverInterruptedAiRunning() {
+        return entityManager.createNativeQuery("""
+                update articles
+                   set ai_status = 'PENDING_AI',
+                       last_error = 'Server restarted while AI processing was running'
+                 where ai_status = 'AI_RUNNING'
+                """)
+                .executeUpdate();
+    }
+
+    @Transactional
+    public void saveRawHtml(long articleId, String rawHtml, String contentHash, int httpStatus) {
+        String now = Instant.now().toString();
+        entityManager.createNativeQuery("""
+                insert into article_raw_sources
+                    (article_id, raw_html, content_hash, http_status, fetched_at, created_at)
+                values
+                    (:articleId, :rawHtml, :contentHash, :httpStatus, :now, :now)
+                on conflict(article_id) do update set
+                    raw_html = excluded.raw_html,
+                    content_hash = excluded.content_hash,
+                    http_status = excluded.http_status,
+                    fetched_at = excluded.fetched_at
+                """)
+                .setParameter("articleId", articleId)
+                .setParameter("rawHtml", rawHtml)
+                .setParameter("contentHash", contentHash)
+                .setParameter("httpStatus", httpStatus)
+                .setParameter("now", now)
+                .executeUpdate();
+
+        entityManager.createNativeQuery("""
+                update articles
+                   set raw_status = 'FETCHED',
+                       wiki_status = case when wiki_status is null then 'PENDING' else wiki_status end,
+                       raw_id = null
+                 where id = :articleId
+                """)
+                .setParameter("articleId", articleId)
+                .executeUpdate();
+    }
+
+    @Transactional(readOnly = true)
+    public boolean hasRawHtml(long articleId) {
+        Number count = (Number) entityManager.createNativeQuery("""
+                select count(*)
+                  from article_raw_sources
+                 where article_id = :articleId
+                """)
+                .setParameter("articleId", articleId)
+                .getSingleResult();
+        return count != null && count.longValue() > 0;
     }
 
     @Transactional
@@ -231,17 +331,23 @@ public class ArticleRepository {
 
     @Transactional(readOnly = true)
     public ArticleDetailView findArticleDetail(long id) {
-        Object[] values = (Object[]) entityManager.createNativeQuery("""
+        List<?> rows = entityManager.createNativeQuery("""
                 select a.id, a.title, a.canonical_url, a.feed_url, a.published_at, a.ingested_at, a.ai_status,
                        p.name as provider_name,
-                       n.short_summary, n.durable_knowledge, n.durability, n.generated_at
+                       n.short_summary, n.context_summary, n.why_it_matters, n.key_facts,
+                       n.durable_knowledge, n.transient_update, n.source_assessment,
+                       n.durability, n.generated_at
                   from articles a
                   join providers p on p.id = a.provider_id
                   left join article_notes n on n.article_id = a.id
-                 where a.id = :id
+                where a.id = :id
                 """)
                 .setParameter("id", id)
-                .getSingleResult();
+                .getResultList();
+        if (rows.isEmpty()) {
+            return null;
+        }
+        Object[] values = (Object[]) rows.getFirst();
         return new ArticleDetailView(
                 longValue(values[0]),
                 stringValue(values[1]),
@@ -254,7 +360,12 @@ public class ArticleRepository {
                 stringValue(values[8]),
                 stringValue(values[9]),
                 stringValue(values[10]),
-                stringValue(values[11])
+                stringValue(values[11]),
+                stringValue(values[12]),
+                stringValue(values[13]),
+                stringValue(values[14]),
+                stringValue(values[15]),
+                stringValue(values[16])
         );
     }
 
@@ -321,7 +432,12 @@ public class ArticleRepository {
             String providerName,
             String aiStatus,
             String shortSummary,
+            String contextSummary,
+            String whyItMatters,
+            String keyFacts,
             String durableKnowledge,
+            String transientUpdate,
+            String sourceAssessment,
             String durability,
             String generatedAt
     ) {

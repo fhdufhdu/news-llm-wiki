@@ -158,9 +158,23 @@ public class RssIngestService {
                 return 0;
             }
             int saved = 0;
-            for (RssEntry entry : rssParser.parse(feed.html())) {
+            int unreadProcessed = 0;
+            int unreadLimit = properties.rssFeedEntryLimit();
+            List<RssEntry> entries = rssParser.parse(feed.html());
+            logger.log("INFO", "RSS feed entry 확인: " + source.name()
+                    + ", 전체 " + entries.size()
+                    + "개, 읽지 않은 항목 제한 " + (unreadLimit <= 0 ? "없음" : unreadLimit + "개"));
+            for (RssEntry entry : entries) {
                 try {
-                    if (saveEntry(source, feedUrl, entry, logger, articleErrors)) {
+                    String canonicalUrl = unreadCanonicalUrl(entry, logger);
+                    if (canonicalUrl == null) {
+                        continue;
+                    }
+                    if (unreadLimit > 0 && unreadProcessed >= unreadLimit) {
+                        break;
+                    }
+                    unreadProcessed++;
+                    if (saveEntry(source, feedUrl, entry, canonicalUrl, logger, articleErrors)) {
                         saved++;
                         logger.log("INFO", "기사 저장: " + source.name() + " - " + entry.title());
                     }
@@ -176,6 +190,22 @@ public class RssIngestService {
             logger.log("ERROR", "RSS feed 처리 실패: " + feedUrl + " - " + e.getMessage());
             return 0;
         }
+    }
+
+    private String unreadCanonicalUrl(RssEntry entry, IngestLogger logger) {
+        if (entry.url() == null || entry.url().isBlank()) {
+            return null;
+        }
+        String canonicalUrl = canonicalizer.canonicalize(entry.url());
+        if (articleRepository.existsByCanonicalUrl(canonicalUrl)) {
+            failureRepository.deleteByCanonicalUrl(canonicalUrl);
+            return null;
+        }
+        if (failureRepository.isIgnored(canonicalUrl)) {
+            logger.log("INFO", "기사 원문 fetch 무시: 재시도 한도 초과 - " + entry.title());
+            return null;
+        }
+        return canonicalUrl;
     }
 
     private void retryFailedArticles(IngestLogger logger, AtomicInteger saved, AtomicInteger articleErrors) {
@@ -207,15 +237,14 @@ public class RssIngestService {
         logger.log("INFO", "실패 기사 재처리 완료");
     }
 
-    private boolean saveEntry(RssSource source, String feedUrl, RssEntry entry, IngestLogger logger, AtomicInteger articleErrors) {
-        if (entry.url() == null || entry.url().isBlank()) {
-            return false;
-        }
-        String canonicalUrl = canonicalizer.canonicalize(entry.url());
-        if (failureRepository.isIgnored(canonicalUrl)) {
-            logger.log("INFO", "기사 원문 fetch 무시: 재시도 한도 초과 - " + entry.title());
-            return false;
-        }
+    private boolean saveEntry(
+            RssSource source,
+            String feedUrl,
+            RssEntry entry,
+            String canonicalUrl,
+            IngestLogger logger,
+            AtomicInteger articleErrors
+    ) {
         return saveArticle(
                 canonicalUrl,
                 source.sourceKey(),
@@ -271,8 +300,8 @@ public class RssIngestService {
                 publishedAt,
                 contentHash
         );
-        Path rawPath = articleService.writeGzipRaw(Path.of(properties.dataDir()), sourceId, publishedAt, article.html());
-        articleService.recordRawFile(articleId, rawPath, article.contentType(), article.statusCode());
+        articleRepository.saveRawHtml(articleId, article.html(), contentHash, article.statusCode());
+        logger.log("INFO", "기사 원문 저장: " + sourceName + " - " + (title == null || title.isBlank() ? canonicalUrl : title));
         failureRepository.deleteByCanonicalUrl(canonicalUrl);
         return true;
     }
