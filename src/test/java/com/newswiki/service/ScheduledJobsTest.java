@@ -22,7 +22,7 @@ class ScheduledJobsTest {
                 new com.newswiki.dto.WikiJobResult(20, 0, 0, "batch-2"),
                 new com.newswiki.dto.WikiJobResult(0, 0, 0, "done")
         );
-        var jobs = new ScheduledJobs(locks, runs, null, wiki, articles, properties());
+        var jobs = new ScheduledJobs(locks, runs, wiki, articles, properties());
 
         jobs.runDailyRebuildNow();
 
@@ -37,21 +37,16 @@ class ScheduledJobsTest {
 
     private AppProperties properties() {
         return new AppProperties(
-                "./rss-sources.yaml",
                 "./data",
                 "/tmp/codex",
                 "gpt-5.5",
                 "workspace-write",
-                "0 */5 * * * *",
                 "0 30 3 * * *",
                 5,
                 3,
                 80,
                 1800,
                 15,
-                10,
-                2,
-                5,
                 2,
                 false,
                 "SQLITE_TEXT"
@@ -121,7 +116,7 @@ class ScheduledJobsTest {
         }
 
         @Override
-        public com.newswiki.dto.WikiJobResult runPendingWikiBatch(long jobRunId, RssIngestService.IngestLogger logger) {
+        public com.newswiki.dto.WikiJobResult runPendingWikiBatch(long jobRunId, WikiLogger logger) {
             logger.log("INFO", "test-progress");
             return results.get(calls++);
         }

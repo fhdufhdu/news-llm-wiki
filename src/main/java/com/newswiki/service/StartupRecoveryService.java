@@ -51,16 +51,11 @@ public class StartupRecoveryService {
     }
 
     private void resumeRecoveredWork(List<String> interruptedTypes, int recoveredWikiArticles) {
-        boolean resumeIngest = interruptedTypes.contains("INGEST");
         boolean resumeRebuild = recoveredWikiArticles > 0 || interruptedTypes.contains("DAILY_REBUILD");
-        if (!resumeIngest && !resumeRebuild) {
+        if (!resumeRebuild) {
             return;
         }
         jobTaskExecutor.execute(() -> {
-            if (resumeIngest) {
-                jobRunRepository.appendLog(null, "INFO", "서버 재시작 복구: 중단된 INGEST 작업 재실행");
-                scheduledJobs.runIngestNow();
-            }
             if (resumeRebuild) {
                 jobRunRepository.appendLog(null, "INFO", "서버 재시작 복구: 미완료 wiki backlog 재빌드 실행");
                 scheduledJobs.runDailyRebuildNow();

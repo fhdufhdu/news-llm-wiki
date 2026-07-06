@@ -17,21 +17,16 @@ spring:
     open-in-view: false
 
 newswiki:
-  rss-sources-path: ${RSS_SOURCES_PATH:./rss-sources.yaml}
   data-dir: ${DATA_DIR:./data}
   codex-home: ${CODEX_HOME:${user.home}/.codex}
   codex-model: ${CODEX_MODEL:gpt-5.5}
   codex-sandbox: ${CODEX_SANDBOX:danger-full-access}
-  ingest-cron: ${INGEST_CRON:0 */5 * * * *}
   daily-rebuild-cron: ${DAILY_REBUILD_CRON:0 30 3 * * *}
   daily-rebuild-max-batches: ${DAILY_REBUILD_MAX_BATCHES:25}
   ai-max-retries: ${AI_MAX_RETRIES:3}
   ai-batch-size: ${AI_BATCH_SIZE:80}
   ai-timeout-seconds: ${AI_TIMEOUT_SECONDS:1800}
   article-fetch-timeout-seconds: ${ARTICLE_FETCH_TIMEOUT_SECONDS:15}
-  rss-fetch-timeout-seconds: ${RSS_FETCH_TIMEOUT_SECONDS:10}
-  ingest-parallelism: ${INGEST_PARALLELISM:6}
-  rss-feed-entry-limit: ${RSS_FEED_ENTRY_LIMIT:5}
   article-fetch-max-retries: ${ARTICLE_FETCH_MAX_RETRIES:3}
   article-fetch-insecure-ssl: ${ARTICLE_FETCH_INSECURE_SSL:false}
   raw-storage-mode: ${RAW_STORAGE_MODE:SQLITE_TEXT}

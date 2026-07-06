@@ -58,21 +58,16 @@ class CodexWikiServiceTest {
 
     private AppProperties properties() {
         return new AppProperties(
-                "./rss-sources.yaml",
                 tempDir.toString(),
                 tempDir.resolve("codex").toString(),
                 "gpt-5.5",
                 "workspace-write",
-                "0 */5 * * * *",
                 "0 30 3 * * *",
                 5,
                 3,
                 80,
                 1800,
                 15,
-                10,
-                2,
-                5,
                 2,
                 false,
                 "SQLITE_TEXT"

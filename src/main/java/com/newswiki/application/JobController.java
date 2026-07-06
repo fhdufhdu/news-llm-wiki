@@ -29,12 +29,6 @@ public class JobController {
         return "pages/jobs";
     }
 
-    @PostMapping("/jobs/run/ingest")
-    public String runIngestNow() {
-        jobService.runIngestNow();
-        return "redirect:/jobs";
-    }
-
     @PostMapping("/jobs/run/rebuild")
     public String runRebuildNow() {
         jobService.runRebuildNow();

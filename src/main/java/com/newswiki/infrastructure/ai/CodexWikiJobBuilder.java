@@ -39,13 +39,17 @@ public class CodexWikiJobBuilder {
                 8. Call finish_wiki_run() before exiting.
 
                 Important:
-                - The server mechanically collects RSS and raw HTML.
+                - The server mechanically collects user-provided article URLs and raw HTML.
                 - Your job is to maintain durable wiki data in SQLite.
                 - 기사 1건마다 SQLite에 즉시 반영한다.
                 - Process one article at a time and commit each article to SQLite immediately.
                 - Sections are yours to create, update, and delete. The web UI renders whatever is in DB.
                 - Reuse existing wiki pages when a new article updates an existing knowledge flow.
                 - Create a new page only when the knowledge does not fit an existing page.
+                - Before updating a wiki page, call list_sections().
+                - For each article, call search_pages() with title keywords, entity keywords, and topic keywords.
+                - If search_pages() returns candidates, call get_page() before upsert_page().
+                - Create a new page only when no existing page can absorb the article.
 
                 Database: %s
                 Job run id: %d

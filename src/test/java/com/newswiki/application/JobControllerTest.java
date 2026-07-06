@@ -15,14 +15,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class JobControllerTest {
     @Test
-    void forceRunIngestTriggersSchedulerAndRedirectsToJobs() {
+    void forceRunRebuildTriggersSchedulerAndRedirectsToJobs() {
         var scheduler = new RecordingScheduledJobs();
         var controller = new JobController(newsViewService(), jobService(scheduler));
 
-        String view = controller.runIngestNow();
+        String view = controller.runRebuildNow();
 
         assertThat(view).isEqualTo("redirect:/jobs");
-        assertThat(scheduler.ingestRuns).isEqualTo(1);
+        assertThat(scheduler.rebuildRuns).isEqualTo(1);
     }
 
     @Test
@@ -73,25 +73,20 @@ class JobControllerTest {
     }
 
     private static class RecordingScheduledJobs extends ScheduledJobs {
-        int ingestRuns;
+        int rebuildRuns;
 
         RecordingScheduledJobs() {
-            super(null, null, null, null, null, new AppProperties(
-                    "./rss-sources.yaml",
+            super(null, null, null, null, new AppProperties(
                     "./data",
                     "/tmp/codex",
                     "gpt-5.5",
                     "workspace-write",
-                    "0 */5 * * * *",
                     "0 30 3 * * *",
                     1,
                     1,
                     80,
                     1800,
                     15,
-                    10,
-                    1,
-                    5,
                     1,
                     false,
                     "SQLITE_TEXT"
@@ -99,8 +94,8 @@ class JobControllerTest {
         }
 
         @Override
-        public void runIngestNow() {
-            ingestRuns++;
+        public void runDailyRebuildNow() {
+            rebuildRuns++;
         }
     }
 }

@@ -19,7 +19,7 @@ public class CodexWikiService {
     private final CodexRunner codexRunner;
     private final AppProperties properties;
 
-    public WikiJobResult runPendingWikiBatch(long jobRunId, RssIngestService.IngestLogger logger) {
+    public WikiJobResult runPendingWikiBatch(long jobRunId, WikiLogger logger) {
         int pending = articleRepository.countPendingWikiArticles();
         if (pending == 0) {
             return new WikiJobResult(0, 0, 0, "no pending wiki articles");
@@ -49,5 +49,9 @@ public class CodexWikiService {
         }
         String detail = result.stderr() == null || result.stderr().isBlank() ? result.stdout() : result.stderr();
         return new WikiJobResult(input, 0, input, detail);
+    }
+
+    public interface WikiLogger {
+        void log(String level, String message);
     }
 }

@@ -65,7 +65,7 @@ public class NewsViewService {
     public HomeView home() {
         List<ArticleListItem> articles = toListItems(articleRepository.findLatestArticles(30));
         String summary = articles.isEmpty()
-                ? "아직 수집된 기사가 없습니다. 작업 페이지에서 RSS 수집을 실행하면 주요 기사가 표시됩니다."
+                ? "아직 수집된 기사가 없습니다. 기사 가져오기 화면에서 URL을 입력하면 주요 기사가 표시됩니다."
                 : "최근 수집 기사와 AI 위키 노트를 바탕으로 주요 흐름을 표시합니다. AI 노트가 아직 없는 기사는 처리 상태를 함께 보여줍니다.";
         return new HomeView(
                 "오늘의 뉴스",

@@ -28,10 +28,6 @@ public class JobService {
         );
     }
 
-    public void runIngestNow() {
-        jobTaskExecutor.execute(scheduledJobs::runIngestNow);
-    }
-
     public void runRebuildNow() {
         jobTaskExecutor.execute(scheduledJobs::runDailyRebuildNow);
     }

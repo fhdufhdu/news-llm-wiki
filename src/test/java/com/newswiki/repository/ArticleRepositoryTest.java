@@ -92,6 +92,32 @@ class ArticleRepositoryTest {
     }
 
     @Test
+    void savesManualRawArticleAndCanFindItByCanonicalUrl() {
+        long providerId = wikiRepository.upsertProviderByName("Manual");
+
+        long articleId = repository.saveManualRawArticle(
+                "https://example.com/manual",
+                providerId,
+                "수동 기사",
+                "<html><title>수동 기사</title><body>본문</body></html>",
+                200,
+                "0123456789abcdef0123"
+        );
+
+        assertThat(repository.findIdByCanonicalUrl("https://example.com/manual")).contains(articleId);
+        var row = jdbcTemplate.queryForMap("""
+                select a.feed_url, a.raw_status, a.wiki_status, r.raw_html
+                  from articles a
+                  join article_raw_sources r on r.article_id = a.id
+                 where a.id = ?
+                """, articleId);
+        assertThat(row.get("feed_url")).isEqualTo("manual");
+        assertThat(row.get("raw_status")).isEqualTo("FETCHED");
+        assertThat(row.get("wiki_status")).isEqualTo("PENDING");
+        assertThat(row.get("raw_html")).isEqualTo("<html><title>수동 기사</title><body>본문</body></html>");
+    }
+
+    @Test
     void recoversInterruptedWikiRunningArticles() {
         long providerId = wikiRepository.upsertProviderByName("Sample Provider");
         long articleId = repository.insertArticleIfAbsent(

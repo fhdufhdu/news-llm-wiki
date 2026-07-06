@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 @RequiredArgsConstructor
@@ -52,6 +53,49 @@ public class ArticleRepository {
                 .setParameter("canonicalUrl", canonicalUrl)
                 .getSingleResult();
         return count != null && count.longValue() > 0;
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Long> findIdByCanonicalUrl(String canonicalUrl) {
+        List<?> rows = entityManager.createNativeQuery("select id from articles where canonical_url = :canonicalUrl")
+                .setParameter("canonicalUrl", canonicalUrl)
+                .getResultList();
+        if (rows.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(longValue(rows.getFirst()));
+    }
+
+    @Transactional
+    public long saveManualRawArticle(
+            String canonicalUrl,
+            long providerId,
+            String title,
+            String rawHtml,
+            int httpStatus,
+            String contentHash
+    ) {
+        String sourceId = "manual-" + contentHash.substring(0, Math.min(16, contentHash.length()));
+        long articleId = insertArticleIfAbsent(
+                sourceId,
+                canonicalUrl,
+                providerId,
+                title == null || title.isBlank() ? canonicalUrl : title,
+                "manual",
+                null,
+                contentHash
+        );
+        saveRawHtml(articleId, rawHtml, contentHash, httpStatus);
+        entityManager.createNativeQuery("""
+                update articles
+                   set wiki_status = 'PENDING',
+                       wiki_locked_at = null,
+                       wiki_last_error = null
+                 where id = :articleId
+                """)
+                .setParameter("articleId", articleId)
+                .executeUpdate();
+        return articleId;
     }
 
     @Transactional

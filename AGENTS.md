@@ -2,14 +2,14 @@
 
 # News Wiki 운영 규칙
 
-이 작업공간은 RSS 기반 기사 수집, SQLite 저장, Codex CLI 기반 위키 데이터
+이 작업공간은 사용자가 제공한 기사 URL 수집, SQLite 저장, Codex CLI 기반 위키 데이터
 생성, Spring Boot 서버 렌더링 UI를 제공하는 개인용 News Wiki 애플리케이션이다.
 
 ## 핵심 모델
 
-1. RSS는 기사 발견(discovery) 용도로만 사용한다.
-2. 원본 기사 HTML 수집은 기계적으로 수행한다. RSS fetch, URL 정규화,
-   HTML fetch, 중복 제거, raw 저장에는 LLM 판단을 사용하지 않는다.
+1. 사용자는 웹 화면에서 기사 URL을 직접 제공한다.
+2. 원본 기사 HTML 수집은 기계적으로 수행한다. URL 정규화, HTML fetch,
+   중복 제거, raw 저장에는 LLM 판단을 사용하지 않는다.
 3. LLM은 저장 완료된 raw source를 읽어 source-level note와 durable
    topic/entity/event/claim을 만드는 위키 데이터 생성에만 사용한다.
 4. 위키는 일일 digest, keyword dump, crawler output이 아니라 연결된 지식
@@ -20,17 +20,16 @@
 ## 현재 디렉터리 구조
 
 - `src/main/java/com/newswiki/application/`: Spring MVC controller와 화면 진입점.
-- `src/main/java/com/newswiki/service/`: RSS 수집, raw 저장, 위키 생성, scheduler
+- `src/main/java/com/newswiki/service/`: URL import, raw 저장, 위키 생성, scheduler
   같은 application workflow.
 - `src/main/java/com/newswiki/repository/`: SQLite 접근. Spring JDBC `JdbcClient`를
   직접 사용한다.
-- `src/main/java/com/newswiki/infrastructure/`: RSS parser/source loader, HTTP fetcher,
+- `src/main/java/com/newswiki/infrastructure/`: HTTP fetcher,
   Codex runner, importer 같은 외부 입출력 구현.
 - `src/main/java/com/newswiki/dto/`: 계층 사이를 오가는 단순 data carrier.
 - `src/main/resources/db/migration/`: Flyway SQLite schema.
 - `src/main/resources/templates/`: Thymeleaf 화면.
 - `src/main/resources/static/css/`: 디자인 시스템 CSS.
-- `rss-sources.yaml`: 공식/직접 RSS source 설정.
 - `docs/`: 설계와 구현 계획 문서.
 
 ## 런타임 데이터
@@ -50,7 +49,7 @@
 - 전형적인 Spring layered architecture를 사용한다.
 - service와 infrastructure의 강결합은 허용한다. 필요 없는 port/adapter
   abstraction을 미리 만들지 않는다.
-- YAGNI, KISS, DRY를 따른다. 지금 필요한 RSS 수집, raw 저장, 위키 데이터 생성,
+- YAGNI, KISS, DRY를 따른다. 지금 필요한 URL import, raw 저장, 위키 데이터 생성,
   조회 화면에 필요한 코드만 만든다.
 - `GeekNews`는 section이 아니라 provider다.
 - section navigation과 provider 목록은 hard-code하지 말고 DB row에서 조회한다.

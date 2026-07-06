@@ -14,7 +14,7 @@ class StartupRecoveryServiceTest {
     @Test
     void recoversInterruptedWorkAndWritesSummaryLog() {
         var articles = new RecordingArticleRepository(12);
-        var jobs = new RecordingJobRunRepository(2, List.of("INGEST", "DAILY_REBUILD"));
+        var jobs = new RecordingJobRunRepository(2, List.of("DAILY_REBUILD"));
         var locks = new RecordingJobLockService(3);
         var scheduledJobs = new RecordingScheduledJobs();
         var service = new StartupRecoveryService(articles, jobs, locks, scheduledJobs, Runnable::run);
@@ -28,9 +28,7 @@ class StartupRecoveryServiceTest {
                 .contains("미완료 job 2개 중단 처리")
                 .contains("WIKI_RUNNING 기사 12개 재대기")
                 .contains("active lock 3개 만료"));
-        assertThat(scheduledJobs.ingestCalls).isEqualTo(1);
         assertThat(scheduledJobs.rebuildCalls).isEqualTo(1);
-        assertThat(jobs.logs).anySatisfy(log -> assertThat(log).contains("중단된 INGEST 작업 재실행"));
         assertThat(jobs.logs).anySatisfy(log -> assertThat(log).contains("미완료 wiki backlog 재빌드 실행"));
     }
 
@@ -96,16 +94,10 @@ class StartupRecoveryServiceTest {
     }
 
     private static class RecordingScheduledJobs extends ScheduledJobs {
-        int ingestCalls;
         int rebuildCalls;
 
         RecordingScheduledJobs() {
-            super(null, null, null, null, null, properties());
-        }
-
-        @Override
-        public void runIngestNow() {
-            ingestCalls++;
+            super(null, null, null, null, properties());
         }
 
         @Override
@@ -115,21 +107,16 @@ class StartupRecoveryServiceTest {
 
         private static AppProperties properties() {
             return new AppProperties(
-                    "./rss-sources.yaml",
                     "./data",
                     "/tmp/codex",
                     "gpt-5.5",
                     "workspace-write",
-                    "0 */5 * * * *",
                     "0 30 3 * * *",
                     5,
                     3,
                     80,
                     1800,
                     15,
-                    10,
-                    2,
-                    5,
                     2,
                     false,
                     "SQLITE_TEXT"

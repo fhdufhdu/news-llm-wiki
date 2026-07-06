@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: html(content=~{::content}, pageTitle='가져오기 진행 - News Wiki')}">
+<body>
+<th:block th:fragment="content">
+  <div class="page-grid">
+    <section>
+      <h1 class="page-title">가져오기 진행</h1>
+      <div id="import-progress" th:fragment="progress">
+        <section class="module">
+          <div class="module__header">
+            <h2 class="module__title">전체 진행</h2>
+            <span class="status-badge" th:text="${progress.job.status}">STATUS</span>
+          </div>
+          <div class="article-item">
+            <div class="summary-grid">
+              <div>
+                <strong th:text="${progress.job.totalCount}">0</strong>
+                <span>전체 URL</span>
+              </div>
+              <div>
+                <strong th:text="${progress.job.fetchedCount}">0</strong>
+                <span>원문 저장</span>
+              </div>
+              <div>
+                <strong th:text="${progress.job.wikiDoneCount}">0</strong>
+                <span>위키 반영</span>
+              </div>
+              <div>
+                <strong th:text="${progress.job.failedCount}">0</strong>
+                <span>실패</span>
+              </div>
+            </div>
+            <p class="summary-text" th:text="${progress.job.lastMessage}">message</p>
+          </div>
+        </section>
+
+        <section class="module">
+          <div class="module__header">
+            <h2 class="module__title">URL별 진행</h2>
+            <span class="meta-row">3초마다 갱신</span>
+          </div>
+          <div class="import-table">
+            <div class="import-table__row import-table__row--head">
+              <span>상태</span>
+              <span>URL</span>
+              <span>기사</span>
+              <span>메시지</span>
+            </div>
+            <div class="import-table__row" th:each="item : ${progress.items}">
+              <span class="status-badge" th:text="${item.status}">STATUS</span>
+              <a th:href="${item.canonicalUrl != null ? item.canonicalUrl : item.inputUrl}"
+                 target="_blank" rel="noreferrer"
+                 th:text="${item.canonicalUrl != null ? item.canonicalUrl : item.inputUrl}">url</a>
+              <a th:if="${item.articleId != null}" th:href="@{/articles/{id}(id=${item.articleId})}"
+                 th:text="${'#' + item.articleId}">#1</a>
+              <span th:if="${item.articleId == null}">-</span>
+              <span th:text="${item.errorMessage != null ? item.errorMessage : item.updatedAt}">updated</span>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+  </div>
+  <script th:inline="javascript">
+    const progressUrl = /*[[@{/imports/{id}/fragment(id=${progress.job.id})}]]*/ '/imports/0/fragment';
+    let pendingProgressHtml = null;
+
+    function isSelectingImportProgress(target) {
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return false;
+      const range = selection.getRangeAt(0);
+      return target.contains(range.commonAncestorContainer)
+          || target.contains(range.startContainer)
+          || target.contains(range.endContainer);
+    }
+
+    function renderImportProgress(target, html) {
+      if (target.innerHTML === html) return;
+      target.innerHTML = html;
+    }
+
+    async function refreshImportProgress() {
+      const target = document.getElementById('import-progress');
+      if (!target) return;
+      const response = await fetch(progressUrl, {headers: {'Accept': 'text/html'}});
+      if (!response.ok) return;
+      const html = await response.text();
+      if (isSelectingImportProgress(target)) {
+        pendingProgressHtml = html;
+        return;
+      }
+      renderImportProgress(target, html);
+      pendingProgressHtml = null;
+    }
+
+    document.addEventListener('selectionchange', () => {
+      const target = document.getElementById('import-progress');
+      if (!target || pendingProgressHtml === null || isSelectingImportProgress(target)) return;
+      renderImportProgress(target, pendingProgressHtml);
+      pendingProgressHtml = null;
+    });
+
+    window.setInterval(refreshImportProgress, 3000);
+  </script>
+</th:block>
+</body>
+</html>

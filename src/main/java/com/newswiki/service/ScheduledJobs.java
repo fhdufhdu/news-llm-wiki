@@ -14,7 +14,6 @@ import java.util.UUID;
 public class ScheduledJobs {
     private final JobLockService locks;
     private final JobRunRepository runs;
-    private final RssIngestService ingestService;
     private final CodexWikiService wikiService;
     private final ArticleRepository articleRepository;
     private final int dailyRebuildMaxBatches;
@@ -23,27 +22,16 @@ public class ScheduledJobs {
     public ScheduledJobs(
             JobLockService locks,
             JobRunRepository runs,
-            RssIngestService ingestService,
             CodexWikiService wikiService,
             ArticleRepository articleRepository,
             AppProperties properties
     ) {
         this.locks = locks;
         this.runs = runs;
-        this.ingestService = ingestService;
         this.wikiService = wikiService;
         this.articleRepository = articleRepository;
         this.dailyRebuildMaxBatches = properties.dailyRebuildMaxBatches();
         this.wikiMaxRetries = properties.aiMaxRetries();
-    }
-
-    @Scheduled(cron = "${newswiki.ingest-cron}")
-    public void hourlyIngest() {
-        runIngestNow();
-    }
-
-    public void runIngestNow() {
-        runLocked("hourly-ingest", "INGEST", this::ingest);
     }
 
     @Scheduled(cron = "${newswiki.daily-rebuild-cron}")
@@ -53,26 +41,6 @@ public class ScheduledJobs {
 
     public void runDailyRebuildNow() {
         runLocked("daily-rebuild", "DAILY_REBUILD", this::dailyRebuild);
-    }
-
-    private int ingest(long runId) {
-        var result = ingestService.ingest((level, message) -> runs.appendLog(runId, level, message));
-        runs.appendLog(runId, "INFO", "RSS source 확인: enabled " + result.feedsSeen()
-                + "개, 직접 RSS " + result.directRssFeeds()
-                + "개, RSS index " + result.rssIndexes()
-                + "개, 신규 기사 " + result.articlesSaved()
-                + "개, feed 오류 " + result.feedErrors()
-                + "개, article 오류 " + result.articleErrors() + "개");
-        int pendingWikiArticles = articleRepository.countPendingWikiArticles();
-        if (pendingWikiArticles > 0) {
-            runs.appendLog(runId, "INFO", "위키 작업 시작: pending " + pendingWikiArticles + "개");
-            var wikiResult = wikiService.runPendingWikiBatch(runId, (level, message) -> runs.appendLog(runId, level, message));
-            runs.appendLog(runId, "INFO", "위키 작업 완료: 입력 " + wikiResult.inputCount()
-                    + "개, detail=" + wikiResult.detail());
-        } else {
-            runs.appendLog(runId, "INFO", "위키 처리 대기 기사가 없어 위키 작업을 건너뜀");
-        }
-        return result.articlesSaved();
     }
 
     private int dailyRebuild(long runId) {

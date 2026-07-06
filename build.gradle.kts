@@ -23,8 +23,6 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-flyway")
     implementation("org.hibernate.orm:hibernate-community-dialects")
     implementation("org.xerial:sqlite-jdbc:3.50.3.0")
-    implementation("org.yaml:snakeyaml:2.3")
-    implementation("com.rometools:rome:2.1.0")
     implementation("org.jsoup:jsoup:1.19.1")
 
     compileOnly("org.projectlombok:lombok")
