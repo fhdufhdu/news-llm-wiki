@@ -1,7 +1,6 @@
 <article class="article-item" th:fragment="articleItem(item)" xmlns:th="http://www.thymeleaf.org">
   <a class="article-item__title" th:href="@{/articles/{id}(id=${item.id})}" th:text="${item.title}">기사 제목</a>
   <div class="meta-row">
-    <span th:text="${item.provider}">제공사</span>
     <span th:if="${item.publishedAt != ''}" th:text="${item.publishedAt}">발행 시각</span>
     <span class="status-badge" th:text="${item.durability}">durable</span>
   </div>

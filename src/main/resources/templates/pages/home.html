@@ -42,15 +42,6 @@
           <p class="summary-text">원본 수집은 서버가 수행하고, 위키 데이터 생성은 Codex가 SQLite에 직접 기록합니다.</p>
         </div>
       </section>
-      <section class="module">
-        <div class="module__header">
-          <h2 class="module__title">제공사 하이라이트</h2>
-        </div>
-        <div class="article-item" th:each="provider : ${providers}">
-          <a class="article-item__title" th:href="@{/providers/{slug}(slug=${provider.slug})}" th:text="${provider.name}">제공사</a>
-          <p class="summary-text" th:text="${provider.description}">제공사 설명</p>
-        </div>
-      </section>
     </aside>
   </div>
 </th:block>

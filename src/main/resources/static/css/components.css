@@ -16,7 +16,8 @@
   border-bottom: 2px solid transparent;
 }
 
-.section-nav__item[aria-current="page"] {
+.section-nav__item[aria-current="page"],
+.section-nav__item--active {
   color: var(--color-brand-primary-strong);
   border-bottom-color: var(--color-brand-primary);
   background: var(--color-surface-selected);

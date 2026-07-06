@@ -38,7 +38,7 @@
         <div class="article-item" th:each="source : ${page.sources}">
           <a class="article-item__title"
              th:href="${source.canonicalUrl}"
-             th:text="${source.providerName + ' - ' + source.title}">출처</a>
+             th:text="${source.title}">출처</a>
           <p class="summary-text" th:text="${source.contributionSummary}">반영 내용</p>
         </div>
       </section>
