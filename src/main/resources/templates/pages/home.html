@@ -10,7 +10,7 @@
         <div class="meta-row">
           <span th:text="${todaySummary.wikiPageCount + '개 오늘 위키'}">0개 오늘 위키</span>
           <span th:text="${todaySummary.articleCount + '개 기사'}">0개 기사</span>
-          <span th:text="${view.generatedAt}">생성 대기</span>
+          <span th:text="${todaySummary.updatedAt.isBlank() ? view.generatedAt : todaySummary.updatedAt}">생성 대기</span>
         </div>
         <p class="summary-text" th:text="${todaySummary.summary}">오늘의 요약</p>
       </section>
@@ -20,12 +20,11 @@
           <span class="status-badge" th:text="${todaySummary.date}">today</span>
         </div>
         <div class="wiki-page-list">
-          <article class="wiki-page-card" th:each="page : ${todaySummary.pages}">
-            <a class="wiki-page-card__title" th:href="@{/wiki/{slug}(slug=${page.slug})}" th:text="${page.title}">위키 문서</a>
-            <p class="summary-text" th:text="${page.summary}">요약</p>
+          <article class="article-item" th:each="highlight : ${todaySummary.highlights}">
+            <p class="summary-text" th:text="${highlight}">주요 흐름</p>
           </article>
-          <div class="article-item" th:if="${todaySummary.pages.isEmpty()}">
-            <p class="summary-text">오늘 수집된 기사와 연결된 위키 문서가 아직 없습니다.</p>
+          <div class="article-item" th:if="${todaySummary.highlights.isEmpty()}">
+            <p class="summary-text">AI가 오늘자 위키 데이터를 기준으로 오늘의 요약을 생성하면 여기에 표시됩니다.</p>
           </div>
         </div>
       </section>

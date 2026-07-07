@@ -26,9 +26,13 @@ class CodexWikiJobBuilderTest {
         assertThat(prompt).contains("Major categories are wiki_categories.fixed=1");
         assertThat(prompt).contains("Subcategories are wiki_categories.fixed=0");
         assertThat(prompt).contains("Every wiki page MUST have a major category");
+        assertThat(prompt).contains("After each successfully processed article");
+        assertThat(prompt).contains("upsert_daily_summary");
+        assertThat(prompt).contains("Today's summary is a daily synthesis");
         assertThat(helper).contains("DB = \"/app/data/newswiki.sqlite\"");
         assertThat(helper).contains("JOB_RUN_ID = 123");
         assertThat(helper).contains("def claim_articles");
+        assertThat(helper).contains("def korea_today");
         assertThat(helper).contains("def list_major_categories");
         assertThat(helper).contains("def list_subcategories");
         assertThat(helper).contains("def create_subcategory");
@@ -39,6 +43,9 @@ class CodexWikiJobBuilderTest {
         assertThat(helper).doesNotContain("def delete_section");
         assertThat(helper).contains("def validate_major_category");
         assertThat(helper).contains("def upsert_page");
+        assertThat(helper).contains("def list_today_wiki_context");
+        assertThat(helper).contains("def upsert_daily_summary");
+        assertThat(helper).contains("daily_wiki_summaries");
         assertThat(helper).contains("def link_source");
         assertThat(helper).contains("def add_revision");
         assertThat(helper).contains("def progress");

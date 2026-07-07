@@ -34,9 +34,13 @@ public class CodexWikiJobBuilder {
                 5. For each article: get_article(), extract_article_text(), inspect existing major categories,
                    subcategories, and pages. Update or create wiki subcategories/pages, link the source, add a revision,
                    then mark_article_done().
-                6. On each meaningful step call progress().
-                7. On article failure call mark_article_failed(article_id, error).
-                8. Call finish_wiki_run() before exiting.
+                6. After each successfully processed article, call list_today_wiki_context() and update today's
+                   integrated summary with upsert_daily_summary(summary, highlights). This summary is rendered on
+                   the home page as "오늘의 요약"; do not leave it as a server-generated list of page summaries.
+                7. On each meaningful step call progress().
+                8. On article failure call mark_article_failed(article_id, error).
+                9. Before finish_wiki_run(), call upsert_daily_summary() once more using the final today context.
+                10. Call finish_wiki_run() before exiting.
 
                 Important:
                 - The server mechanically collects user-provided article URLs and raw HTML.
@@ -57,6 +61,11 @@ public class CodexWikiJobBuilder {
                 - For each article, call search_pages() with title keywords, entity keywords, and topic keywords.
                 - If search_pages() returns candidates, call get_page() before upsert_page().
                 - Create a new page only when no existing page can absorb the article.
+                - Today's summary is a daily synthesis, not a list of updated wiki pages.
+                - Build today's summary from list_today_wiki_context(), today's articles, and the wiki pages they changed.
+                - upsert_daily_summary(summary, highlights) should be concise but useful:
+                  summary is 2-4 Korean sentences about today's main flows.
+                  highlights is 3-7 Korean bullet-style strings, each connecting related articles/wiki pages.
 
                 Database: %s
                 Job run id: %d
@@ -76,6 +85,9 @@ public class CodexWikiJobBuilder {
 
                 def now():
                     return datetime.datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+
+                def korea_today():
+                    return (datetime.datetime.utcnow() + datetime.timedelta(hours=9)).date().isoformat()
 
                 def connect():
                     con = sqlite3.connect(DB)
@@ -213,6 +225,60 @@ public class CodexWikiJobBuilder {
                     with connect() as con:
                         row = con.execute("select * from wiki_pages where id=?", (page_id,)).fetchone()
                         return dict(row) if row else None
+
+                def get_daily_summary(summary_date=None):
+                    summary_date = summary_date or korea_today()
+                    with connect() as con:
+                        row = con.execute("select * from daily_wiki_summaries where summary_date=?", (summary_date,)).fetchone()
+                        return dict(row) if row else None
+
+                def list_today_wiki_context(summary_date=None, limit=80):
+                    summary_date = summary_date or korea_today()
+                    with connect() as con:
+                        articles = [dict(r) for r in con.execute(\"\"\"
+                            select id, title, canonical_url, published_at, ingested_at, wiki_status
+                              from articles
+                             where date(datetime(coalesce(published_at, ingested_at, collected_at), '+9 hours')) = ?
+                             order by coalesce(published_at, ingested_at, collected_at) desc, id desc
+                             limit ?
+                        \"\"\", (summary_date, limit))]
+                        pages = [dict(r) for r in con.execute(\"\"\"
+                            select distinct p.id, p.slug, p.title, p.summary, p.body, p.importance, p.updated_at
+                              from wiki_pages p
+                              join wiki_page_sources ps on ps.wiki_page_id = p.id
+                              join articles a on a.id = ps.article_id
+                             where p.status='ACTIVE'
+                               and date(datetime(coalesce(a.published_at, a.ingested_at, a.collected_at), '+9 hours')) = ?
+                             order by p.importance desc, p.updated_at desc, p.title asc
+                             limit ?
+                        \"\"\", (summary_date, limit))]
+                        summary_row = con.execute("select * from daily_wiki_summaries where summary_date=?", (summary_date,)).fetchone()
+                        existing_summary = dict(summary_row) if summary_row else None
+                    return {
+                        'date': summary_date,
+                        'articles': articles,
+                        'pages': pages,
+                        'existing_summary': existing_summary,
+                    }
+
+                def upsert_daily_summary(summary, highlights, summary_date=None):
+                    summary_date = summary_date or korea_today()
+                    if not summary or not summary.strip():
+                        raise ValueError("daily summary is required")
+                    if isinstance(highlights, str):
+                        highlight_text = highlights.strip()
+                    else:
+                        highlight_text = "\\n".join([str(item).strip() for item in highlights if str(item).strip()])
+                    with connect() as con:
+                        con.execute(\"\"\"
+                            insert into daily_wiki_summaries(summary_date,summary,highlights,created_at,updated_at)
+                            values (?,?,?,?,?)
+                            on conflict(summary_date) do update set
+                                summary=excluded.summary,
+                                highlights=excluded.highlights,
+                                updated_at=excluded.updated_at
+                        \"\"\", (summary_date, summary.strip(), highlight_text, now(), now()))
+                    progress("daily summary updated", date=summary_date, highlights=len(highlight_text.splitlines()) if highlight_text else 0)
 
                 def validate_major_category(con, major_category_id):
                     row = con.execute(

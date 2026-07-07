@@ -32,7 +32,8 @@ class WikiSchemaMigrationTest {
                 "wiki_pages",
                 "wiki_page_sources",
                 "wiki_revisions",
-                "wiki_runs"
+                "wiki_runs",
+                "daily_wiki_summaries"
         );
         assertThat(tableNames).doesNotContain("sections", "section_summaries", "wiki_sections");
     }

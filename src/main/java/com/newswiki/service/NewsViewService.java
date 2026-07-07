@@ -70,7 +70,7 @@ public class NewsViewService {
     public TodaySummary todaySummary() {
         String date = LocalDate.now(ZoneId.of("Asia/Seoul")).toString();
         if (wikiPageRepository == null) {
-            return new TodaySummary(date, 0, 0, "오늘 저장된 기사 원문을 바탕으로 위키 문서가 생성되면 이 영역에 주요 흐름을 표시합니다.", List.of());
+            return new TodaySummary(date, 0, 0, "오늘 저장된 기사 원문을 바탕으로 AI가 위키 문서를 갱신하면 이 영역에 오늘의 주요 흐름을 표시합니다.", List.of(), "", List.of());
         }
         var summary = wikiPageRepository.findTodaySummary(date);
         return new TodaySummary(
@@ -78,6 +78,8 @@ public class NewsViewService {
                 summary.articleCount(),
                 summary.wikiPageCount(),
                 summary.summary(),
+                summary.highlights(),
+                timeDisplayService.format(summary.updatedAt()),
                 formatWikiPages(summary.pages())
         );
     }

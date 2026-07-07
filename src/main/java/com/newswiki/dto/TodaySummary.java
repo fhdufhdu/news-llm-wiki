@@ -7,6 +7,8 @@ public record TodaySummary(
         int articleCount,
         int wikiPageCount,
         String summary,
+        List<String> highlights,
+        String updatedAt,
         List<WikiPageListItem> pages
 ) {
 }

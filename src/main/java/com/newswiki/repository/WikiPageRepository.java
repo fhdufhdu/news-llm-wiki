@@ -85,14 +85,43 @@ public class WikiPageRepository {
                 .getResultStream()
                 .map(this::pageListItem)
                 .toList();
-        String summary = pages.isEmpty()
-                ? "오늘 저장된 기사 원문을 바탕으로 위키 문서가 생성되면 이 영역에 주요 흐름을 표시합니다."
-                : pages.stream()
-                .limit(4)
-                .map(page -> page.title() + ": " + page.summary())
-                .reduce((left, right) -> left + " / " + right)
-                .orElse("");
-        return new TodaySummaryView(date, articleCount, pages.size(), summary, pages);
+        DailySummaryRow dailySummary = findDailySummary(date);
+        if (dailySummary == null) {
+            String fallback = pages.isEmpty()
+                    ? "오늘 저장된 기사 원문을 바탕으로 AI가 위키 문서를 갱신하면 이 영역에 오늘의 주요 흐름을 표시합니다."
+                    : "AI가 오늘자 위키 데이터를 바탕으로 오늘의 요약을 생성하는 중입니다.";
+            return new TodaySummaryView(date, articleCount, pages.size(), fallback, List.of(), "", pages);
+        }
+        return new TodaySummaryView(
+                date,
+                articleCount,
+                pages.size(),
+                dailySummary.summary(),
+                splitHighlights(dailySummary.highlights()),
+                dailySummary.updatedAt(),
+                pages
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public DailySummaryRow findDailySummary(String date) {
+        List<?> rows = entityManager.createNativeQuery("""
+                select summary_date, summary, highlights, updated_at
+                  from daily_wiki_summaries
+                 where summary_date = :date
+                """)
+                .setParameter("date", date)
+                .getResultList();
+        if (rows.isEmpty()) {
+            return null;
+        }
+        Object[] values = (Object[]) rows.getFirst();
+        return new DailySummaryRow(
+                stringValue(values[0]),
+                stringValue(values[1]),
+                stringValue(values[2]),
+                stringValue(values[3])
+        );
     }
 
     @Transactional(readOnly = true)
@@ -230,12 +259,33 @@ public class WikiPageRepository {
         return value == null ? "" : value.toString();
     }
 
+    private static List<String> splitHighlights(String value) {
+        if (value == null || value.isBlank()) {
+            return List.of();
+        }
+        return value.replace("\\n", "\n")
+                .lines()
+                .map(String::trim)
+                .filter(line -> !line.isBlank())
+                .toList();
+    }
+
     public record TodaySummaryView(
             String date,
             int articleCount,
             int wikiPageCount,
             String summary,
+            List<String> highlights,
+            String updatedAt,
             List<WikiPageListItem> pages
+    ) {
+    }
+
+    public record DailySummaryRow(
+            String date,
+            String summary,
+            String highlights,
+            String updatedAt
     ) {
     }
 }

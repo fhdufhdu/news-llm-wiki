@@ -28,6 +28,7 @@ class WikiPageRepositoryTest {
         jdbc.update("delete from wiki_page_sources");
         jdbc.update("delete from wiki_pages");
         jdbc.update("delete from wiki_categories");
+        jdbc.update("delete from daily_wiki_summaries");
         jdbc.update("delete from article_raw_sources");
         jdbc.update("delete from articles");
     }
@@ -59,6 +60,28 @@ class WikiPageRepositoryTest {
         assertThat(detail.title()).isEqualTo("GPU 전력");
         assertThat(detail.sources()).hasSize(1);
         assertThat(detail.sources().getFirst().contributionSummary()).isEqualTo("전력 인프라 근거");
+    }
+
+    @Test
+    void readsAiGeneratedDailySummaryBeforeFallbackPageSummary() {
+        long articleId = insertArticle();
+        long majorId = insertCategory("economy", "경제", "경제 흐름", 10, 1);
+        long subcategoryId = insertCategory("earnings", "기업 실적", "실적 흐름", 100, 0);
+        long pageId = insertPage(majorId, subcategoryId, "samsung-earnings", "삼성전자 실적", "서버 조합 요약", "본문", 90);
+        jdbc.update("""
+                insert into wiki_page_sources(wiki_page_id, article_id, contribution_summary, evidence_type, created_at)
+                values(?, ?, '실적 기사', 'reported', datetime('now'))
+                """, pageId, articleId);
+        jdbc.update("""
+                insert into daily_wiki_summaries(summary_date, summary, highlights, created_at, updated_at)
+                values(date(datetime('now', '+9 hours')), 'AI가 작성한 오늘의 종합 요약', '실적과 반도체 업황 연결\\n스포츠 일정 흐름 정리', datetime('now'), datetime('now'))
+                """);
+
+        var summary = repository.findTodaySummary(java.time.LocalDate.now(java.time.ZoneId.of("Asia/Seoul")).toString());
+
+        assertThat(summary.summary()).isEqualTo("AI가 작성한 오늘의 종합 요약");
+        assertThat(summary.highlights()).containsExactly("실적과 반도체 업황 연결", "스포츠 일정 흐름 정리");
+        assertThat(summary.pages()).extracting(WikiPageListItem::title).containsExactly("삼성전자 실적");
     }
 
     private long insertArticle() {
