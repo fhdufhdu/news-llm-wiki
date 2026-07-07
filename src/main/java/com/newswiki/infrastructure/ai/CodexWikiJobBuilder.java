@@ -48,9 +48,12 @@ public class CodexWikiJobBuilder {
                 - Subcategories are wiki_sections.fixed=0. They are yours to create, update, and delete naturally
                   while maintaining wiki pages.
                 - Do not create article-summary-only buckets. Subcategories should describe durable knowledge flows.
+                - Every wiki page MUST have a major category. Pick exactly one major category from list_major_categories().
+                - A wiki page MAY also have a subcategory from list_subcategories() or create_subcategory().
                 - Reuse existing wiki pages when a new article updates an existing knowledge flow.
                 - Create a new page only when the knowledge does not fit an existing page.
                 - Before updating a wiki page, call list_major_categories() and list_subcategories().
+                - Call upsert_page(major_category_id, subcategory_id, title, summary, body, importance).
                 - For each article, call search_pages() with title keywords, entity keywords, and topic keywords.
                 - If search_pages() returns candidates, call get_page() before upsert_page().
                 - Create a new page only when no existing page can absorb the article.
@@ -220,16 +223,37 @@ public class CodexWikiJobBuilder {
                         row = con.execute("select * from wiki_pages where id=?", (page_id,)).fetchone()
                         return dict(row) if row else None
 
-                def upsert_page(section_id, title, summary, body, importance=50):
+                def validate_major_category(con, major_category_id):
+                    row = con.execute(
+                        "select * from wiki_sections where id=? and fixed=1 and status='ACTIVE'",
+                        (major_category_id,)
+                    ).fetchone()
+                    if row is None:
+                        raise ValueError(f"major category is required and must be fixed=1: {major_category_id}")
+
+                def validate_subcategory(con, subcategory_id):
+                    if subcategory_id is None:
+                        return
+                    row = con.execute(
+                        "select * from wiki_sections where id=? and fixed=0 and status='ACTIVE'",
+                        (subcategory_id,)
+                    ).fetchone()
+                    if row is None:
+                        raise ValueError(f"subcategory must be fixed=0 when provided: {subcategory_id}")
+
+                def upsert_page(major_category_id, subcategory_id, title, summary, body, importance=50):
                     slug = slugify(title)
                     with connect() as con:
+                        validate_major_category(con, major_category_id)
+                        validate_subcategory(con, subcategory_id)
                         con.execute(\"\"\"
-                            insert into wiki_pages(section_id,slug,title,summary,body,importance,status,created_at,updated_at)
-                            values (?,?,?,?,?,?, 'ACTIVE', ?, ?)
+                            insert into wiki_pages(major_category_id,section_id,slug,title,summary,body,importance,status,created_at,updated_at)
+                            values (?,?,?,?,?,?,?, 'ACTIVE', ?, ?)
                             on conflict(slug) do update set
-                                section_id=excluded.section_id, title=excluded.title, summary=excluded.summary,
+                                major_category_id=excluded.major_category_id, section_id=excluded.section_id,
+                                title=excluded.title, summary=excluded.summary,
                                 body=excluded.body, importance=excluded.importance, updated_at=excluded.updated_at
-                        \"\"\", (section_id, slug, title, summary, body, importance, now(), now()))
+                        \"\"\", (major_category_id, subcategory_id, slug, title, summary, body, importance, now(), now()))
                         return con.execute("select id from wiki_pages where slug=?", (slug,)).fetchone()[0]
 
                 def link_source(page_id, article_id, contribution_summary, evidence_type=None):

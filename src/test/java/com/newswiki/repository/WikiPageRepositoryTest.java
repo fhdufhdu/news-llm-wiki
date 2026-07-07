@@ -34,18 +34,21 @@ class WikiPageRepositoryTest {
 
     @Test
     void readsActiveSectionsAndPagesFromWikiTables() {
-        long sectionId = insertSection("ai", "AI", "AI 흐름", 10);
-        insertPage(sectionId, "gpu-power", "GPU 전력", "전력 병목", "본문", 90);
+        long majorId = insertSection("technology", "기술", "기술 흐름", 10, 1);
+        long sectionId = insertSection("ai", "AI", "AI 흐름", 100, 0);
+        insertPage(majorId, sectionId, "gpu-power", "GPU 전력", "전력 병목", "본문", 90);
 
-        assertThat(repository.findSections()).extracting(WikiSection::slug).containsExactly("ai");
+        assertThat(repository.findSections()).extracting(WikiSection::slug).containsExactly("technology", "ai");
+        assertThat(repository.findPagesBySection("technology")).extracting(WikiPageListItem::title).containsExactly("GPU 전력");
         assertThat(repository.findPagesBySection("ai")).extracting(WikiPageListItem::title).containsExactly("GPU 전력");
     }
 
     @Test
     void readsPageDetailWithSources() {
         long articleId = insertArticle();
-        long sectionId = insertSection("ai", "AI", "AI 흐름", 10);
-        long pageId = insertPage(sectionId, "gpu-power", "GPU 전력", "전력 병목", "본문", 90);
+        long majorId = insertSection("technology", "기술", "기술 흐름", 10, 1);
+        long sectionId = insertSection("ai", "AI", "AI 흐름", 100, 0);
+        long pageId = insertPage(majorId, sectionId, "gpu-power", "GPU 전력", "전력 병목", "본문", 90);
         jdbc.update("""
                 insert into wiki_page_sources(wiki_page_id, article_id, contribution_summary, evidence_type, created_at)
                 values(?, ?, '전력 인프라 근거', 'reported', datetime('now'))
@@ -66,19 +69,19 @@ class WikiPageRepositoryTest {
         return jdbc.queryForObject("select id from articles where source_id='wiki-source-1'", Long.class);
     }
 
-    private long insertSection(String slug, String title, String summary, int displayOrder) {
+    private long insertSection(String slug, String title, String summary, int displayOrder, int fixed) {
         jdbc.update("""
-                insert into wiki_sections(slug, title, summary, display_order, status, created_at, updated_at)
-                values(?, ?, ?, ?, 'ACTIVE', datetime('now'), datetime('now'))
-                """, slug, title, summary, displayOrder);
+                insert into wiki_sections(slug, title, summary, display_order, status, fixed, created_at, updated_at)
+                values(?, ?, ?, ?, 'ACTIVE', ?, datetime('now'), datetime('now'))
+                """, slug, title, summary, displayOrder, fixed);
         return jdbc.queryForObject("select id from wiki_sections where slug=?", Long.class, slug);
     }
 
-    private long insertPage(long sectionId, String slug, String title, String summary, String body, int importance) {
+    private long insertPage(long majorId, long sectionId, String slug, String title, String summary, String body, int importance) {
         jdbc.update("""
-                insert into wiki_pages(section_id, slug, title, summary, body, importance, status, created_at, updated_at)
-                values(?, ?, ?, ?, ?, ?, 'ACTIVE', datetime('now'), datetime('now'))
-                """, sectionId, slug, title, summary, body, importance);
+                insert into wiki_pages(major_category_id, section_id, slug, title, summary, body, importance, status, created_at, updated_at)
+                values(?, ?, ?, ?, ?, ?, ?, 'ACTIVE', datetime('now'), datetime('now'))
+                """, majorId, sectionId, slug, title, summary, body, importance);
         return jdbc.queryForObject("select id from wiki_pages where slug=?", Long.class, slug);
     }
 }

@@ -8,6 +8,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest(properties = {
         "spring.datasource.url=jdbc:sqlite:file:wiki_schema_migration_test?mode=memory&cache=shared",
@@ -49,5 +50,20 @@ class WikiSchemaMigrationTest {
                 "wiki_attempt_count",
                 "wiki_last_error"
         );
+    }
+
+    @Test
+    void requiresWikiPageMajorCategory() {
+        Set<String> columnNames = Set.copyOf(jdbc.query(
+                "pragma table_info(wiki_pages)",
+                (rs, rowNum) -> rs.getString("name")
+        ));
+
+        assertThat(columnNames).contains("major_category_id");
+        assertThatThrownBy(() -> jdbc.update("""
+                insert into wiki_pages(slug, title, summary, body, importance, status, created_at, updated_at)
+                values('missing-major', '대분류 없음', '', '', 50, 'ACTIVE', datetime('now'), datetime('now'))
+                """))
+                .hasMessageContaining("wiki page major_category_id is required");
     }
 }

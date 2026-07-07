@@ -115,7 +115,7 @@ public class WikiPageRepository {
         return entityManager.createNativeQuery("""
                 select p.id, p.slug, p.title, p.summary, p.importance, p.updated_at
                   from wiki_pages p
-                  join wiki_sections s on s.id = p.section_id
+                  join wiki_sections s on s.id = p.major_category_id or s.id = p.section_id
                  where s.slug = :sectionSlug
                    and s.status = 'ACTIVE'
                    and p.status = 'ACTIVE'
