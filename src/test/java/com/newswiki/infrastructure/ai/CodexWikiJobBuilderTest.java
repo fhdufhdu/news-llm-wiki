@@ -23,12 +23,18 @@ class CodexWikiJobBuilderTest {
 
         assertThat(prompt).contains("claim_articles(80)");
         assertThat(prompt).contains("기사 1건마다 SQLite에 즉시 반영");
-        assertThat(prompt).contains("Sections are yours to create, update, and delete");
+        assertThat(prompt).contains("Major categories are wiki_sections.fixed=1");
+        assertThat(prompt).contains("Subcategories are wiki_sections.fixed=0");
         assertThat(helper).contains("DB = \"/app/data/newswiki.sqlite\"");
         assertThat(helper).contains("JOB_RUN_ID = 123");
         assertThat(helper).contains("def claim_articles");
+        assertThat(helper).contains("def list_major_categories");
+        assertThat(helper).contains("def list_subcategories");
+        assertThat(helper).contains("def create_subcategory");
         assertThat(helper).contains("def create_section");
+        assertThat(helper).contains("def update_subcategory");
         assertThat(helper).contains("def update_section");
+        assertThat(helper).contains("def delete_subcategory");
         assertThat(helper).contains("def delete_section");
         assertThat(helper).contains("def upsert_page");
         assertThat(helper).contains("def link_source");

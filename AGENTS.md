@@ -51,7 +51,8 @@
   abstraction을 미리 만들지 않는다.
 - YAGNI, KISS, DRY를 따른다. 지금 필요한 URL import, raw 저장, 위키 데이터 생성,
   조회 화면에 필요한 코드만 만든다.
-- 상단 section navigation은 고정 섹션만 표시한다. Codex가 만든 동적 섹션은 위키 데이터로만 유지한다.
+- `wiki_sections.fixed=1`은 대분류로 사용한다. 상단 navigation은 대분류만 표시한다.
+- `wiki_sections.fixed=0`은 소분류로 사용한다. Codex는 위키 작성 중 소분류를 자연스럽게 생성, 수정, 삭제할 수 있다.
 
 ## 검증
 

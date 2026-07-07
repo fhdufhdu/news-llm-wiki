@@ -55,6 +55,14 @@ public class NewsViewService {
         return wikiPageRepository.findSections();
     }
 
+    public List<WikiSection> majorCategories() {
+        return wikiPageRepository == null ? List.of() : wikiPageRepository.findMajorCategories();
+    }
+
+    public List<WikiSection> subcategories() {
+        return wikiPageRepository == null ? List.of() : wikiPageRepository.findSubcategories();
+    }
+
     public List<WikiPageListItem> recentWikiPages(int limit) {
         return formatWikiPages(wikiPageRepository.findRecentPages(limit));
     }

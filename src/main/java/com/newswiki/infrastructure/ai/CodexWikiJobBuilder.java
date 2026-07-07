@@ -31,8 +31,8 @@ public class CodexWikiJobBuilder {
                 2. Call recover_stale_articles().
                 3. Call claim_articles(%d).
                 4. Call start_wiki_run(claimed_count=len(article_ids)).
-                5. For each article: get_article(), extract_article_text(), inspect existing sections/pages,
-                   update or create wiki sections/pages, link the source, add a revision,
+                5. For each article: get_article(), extract_article_text(), inspect existing major categories,
+                   subcategories, and pages. Update or create wiki subcategories/pages, link the source, add a revision,
                    then mark_article_done().
                 6. On each meaningful step call progress().
                 7. On article failure call mark_article_failed(article_id, error).
@@ -43,10 +43,14 @@ public class CodexWikiJobBuilder {
                 - Your job is to maintain durable wiki data in SQLite.
                 - 기사 1건마다 SQLite에 즉시 반영한다.
                 - Process one article at a time and commit each article to SQLite immediately.
-                - Sections are yours to create, update, and delete. The web UI renders whatever is in DB.
+                - Major categories are wiki_sections.fixed=1. They are broad categories such as politics, economy,
+                  society, world, technology, culture, sports, and other. Treat them as fixed navigation data.
+                - Subcategories are wiki_sections.fixed=0. They are yours to create, update, and delete naturally
+                  while maintaining wiki pages.
+                - Do not create article-summary-only buckets. Subcategories should describe durable knowledge flows.
                 - Reuse existing wiki pages when a new article updates an existing knowledge flow.
                 - Create a new page only when the knowledge does not fit an existing page.
-                - Before updating a wiki page, call list_sections().
+                - Before updating a wiki page, call list_major_categories() and list_subcategories().
                 - For each article, call search_pages() with title keywords, entity keywords, and topic keywords.
                 - If search_pages() returns candidates, call get_page() before upsert_page().
                 - Create a new page only when no existing page can absorb the article.
@@ -151,29 +155,57 @@ public class CodexWikiJobBuilder {
                     with connect() as con:
                         return [dict(r) for r in con.execute("select * from wiki_sections order by display_order, title")]
 
-                def create_section(title, summary='', order_hint=None):
+                def list_major_categories():
+                    with connect() as con:
+                        return [dict(r) for r in con.execute(
+                            "select * from wiki_sections where fixed=1 and status='ACTIVE' order by display_order, title"
+                        )]
+
+                def list_subcategories():
+                    with connect() as con:
+                        return [dict(r) for r in con.execute(
+                            "select * from wiki_sections where fixed=0 and status='ACTIVE' order by display_order, title"
+                        )]
+
+                def create_subcategory(title, summary='', order_hint=None):
                     slug = slugify(title)
                     with connect() as con:
                         con.execute(\"\"\"
-                            insert into wiki_sections(slug,title,summary,display_order,status,created_at,updated_at)
-                            values (?,?,?,?, 'ACTIVE', ?, ?)
+                            insert into wiki_sections(slug,title,summary,display_order,status,fixed,created_at,updated_at)
+                            values (?,?,?,?, 'ACTIVE', 0, ?, ?)
                         \"\"\", (slug, title, summary, order_hint or 1000, now(), now()))
                         return con.execute("select last_insert_rowid()").fetchone()[0]
 
-                def update_section(section_id, title=None, summary=None, display_order=None):
+                def create_section(title, summary='', order_hint=None):
+                    return create_subcategory(title, summary, order_hint)
+
+                def update_subcategory(section_id, title=None, summary=None, display_order=None):
                     with connect() as con:
                         row = con.execute("select * from wiki_sections where id=?", (section_id,)).fetchone()
                         if row is None:
-                            raise ValueError(f"section not found: {section_id}")
+                            raise ValueError(f"subcategory not found: {section_id}")
+                        if row['fixed']:
+                            raise ValueError(f"major category cannot be updated by Codex: {section_id}")
                         con.execute(\"\"\"
                             update wiki_sections set title=?, summary=?, display_order=?, updated_at=? where id=?
                         \"\"\", (title or row['title'], summary if summary is not None else row['summary'],
                               display_order if display_order is not None else row['display_order'], now(), section_id))
 
-                def delete_section(section_id, move_pages_to=None):
+                def update_section(section_id, title=None, summary=None, display_order=None):
+                    return update_subcategory(section_id, title, summary, display_order)
+
+                def delete_subcategory(section_id, move_pages_to=None):
                     with connect() as con:
+                        row = con.execute("select * from wiki_sections where id=?", (section_id,)).fetchone()
+                        if row is None:
+                            raise ValueError(f"subcategory not found: {section_id}")
+                        if row['fixed']:
+                            raise ValueError(f"major category cannot be deleted by Codex: {section_id}")
                         con.execute("update wiki_pages set section_id=? where section_id=?", (move_pages_to, section_id))
                         con.execute("delete from wiki_sections where id=?", (section_id,))
+
+                def delete_section(section_id, move_pages_to=None):
+                    return delete_subcategory(section_id, move_pages_to)
 
                 def search_pages(query):
                     like = f"%{query}%"

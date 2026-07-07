@@ -23,6 +23,8 @@ public class SearchController {
         model.addAttribute("activeSectionSlug", "");
         model.addAttribute("results", searchService.search(query));
         model.addAttribute("sections", newsViewService.wikiSections());
+        model.addAttribute("majorCategories", newsViewService.majorCategories());
+        model.addAttribute("subcategories", newsViewService.subcategories());
         return "pages/search";
     }
 }

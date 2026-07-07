@@ -309,6 +309,12 @@
   line-height: var(--line-height-readable);
 }
 
+.section-list__empty {
+  padding: 12px var(--space-4);
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-sm);
+}
+
 @media (max-width: 720px) {
   .summary-grid,
   .import-table__row {

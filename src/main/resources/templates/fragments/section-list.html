@@ -1,16 +1,31 @@
 <th:block th:fragment="sectionList(sections)" xmlns:th="http://www.thymeleaf.org">
   <section class="module">
     <div class="module__header">
-      <h2 class="module__title">섹션</h2>
-      <span class="status-badge" th:text="${sections.size() + ' sections'}">0 sections</span>
+      <h2 class="module__title">대분류</h2>
+      <span class="status-badge" th:text="${majorCategories.size() + ' categories'}">0 categories</span>
     </div>
     <div class="section-list">
       <a class="section-list__item"
-         th:each="section : ${sections}"
-         th:href="@{/sections/{slug}(slug=${section.slug})}">
-        <strong th:text="${section.title}">섹션</strong>
-        <span th:text="${section.summary}">요약</span>
+         th:each="category : ${majorCategories}"
+         th:href="@{/sections/{slug}(slug=${category.slug})}">
+        <strong th:text="${category.title}">대분류</strong>
+        <span th:text="${category.summary}">요약</span>
       </a>
+    </div>
+  </section>
+  <section class="module">
+    <div class="module__header">
+      <h2 class="module__title">소분류</h2>
+      <span class="status-badge" th:text="${subcategories.size() + ' subcategories'}">0 subcategories</span>
+    </div>
+    <div class="section-list">
+      <a class="section-list__item"
+         th:each="subcategory : ${subcategories}"
+         th:href="@{/sections/{slug}(slug=${subcategory.slug})}">
+        <strong th:text="${subcategory.title}">소분류</strong>
+        <span th:text="${subcategory.summary}">요약</span>
+      </a>
+      <div class="section-list__empty" th:if="${subcategories.isEmpty()}">아직 소분류가 없습니다.</div>
     </div>
   </section>
 </th:block>

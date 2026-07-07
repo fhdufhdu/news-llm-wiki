@@ -19,6 +19,8 @@ public class HomeController {
         model.addAttribute("activeSectionSlug", "");
         model.addAttribute("view", newsViewService.home());
         model.addAttribute("sections", newsViewService.wikiSections());
+        model.addAttribute("majorCategories", newsViewService.majorCategories());
+        model.addAttribute("subcategories", newsViewService.subcategories());
         model.addAttribute("pages", newsViewService.recentWikiPages(30));
         model.addAttribute("todaySummary", newsViewService.todaySummary());
         return "pages/home";

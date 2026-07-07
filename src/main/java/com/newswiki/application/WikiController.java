@@ -35,6 +35,8 @@ public class WikiController {
         model.addAttribute("summary", wikiService.pendingSummary());
         model.addAttribute("pages", newsViewService.recentWikiPages(100));
         model.addAttribute("sections", newsViewService.wikiSections());
+        model.addAttribute("majorCategories", newsViewService.majorCategories());
+        model.addAttribute("subcategories", newsViewService.subcategories());
         return "pages/wiki-detail";
     }
 
@@ -55,6 +57,8 @@ public class WikiController {
         model.addAttribute("bodyHtml", markdownService.render(page.body()));
         model.addAttribute("pages", newsViewService.recentWikiPages(20));
         model.addAttribute("sections", newsViewService.wikiSections());
+        model.addAttribute("majorCategories", newsViewService.majorCategories());
+        model.addAttribute("subcategories", newsViewService.subcategories());
         return "pages/wiki-detail";
     }
 }

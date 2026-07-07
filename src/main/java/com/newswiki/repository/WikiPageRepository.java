@@ -44,6 +44,25 @@ public class WikiPageRepository {
     }
 
     @Transactional(readOnly = true)
+    public List<WikiSection> findMajorCategories() {
+        return findFixedNavSections();
+    }
+
+    @Transactional(readOnly = true)
+    public List<WikiSection> findSubcategories() {
+        return entityManager.createNativeQuery("""
+                select id, slug, title, summary, display_order
+                  from wiki_sections
+                 where status = 'ACTIVE'
+                   and fixed = 0
+                 order by display_order asc, title asc
+                """)
+                .getResultStream()
+                .map(this::section)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public TodaySummaryView findTodaySummary(String date) {
         int articleCount = intValue(entityManager.createNativeQuery("""
                 select count(*)

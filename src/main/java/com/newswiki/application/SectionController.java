@@ -30,9 +30,11 @@ public class SectionController {
                         .filter(section -> section.slug().equals(slug))
                         .map(com.newswiki.dto.WikiSection::title)
                         .findFirst()
-                        .orElse("섹션")));
+                        .orElse("소분류")));
         model.addAttribute("pages", newsViewService.wikiPagesBySection(slug));
         model.addAttribute("sections", newsViewService.wikiSections());
+        model.addAttribute("majorCategories", newsViewService.majorCategories());
+        model.addAttribute("subcategories", newsViewService.subcategories());
         return "pages/sections";
     }
 }
