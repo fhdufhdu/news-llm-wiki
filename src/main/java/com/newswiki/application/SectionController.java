@@ -26,8 +26,13 @@ public class SectionController {
                 .filter(item -> item.slug().equals(slug))
                 .map(SectionNavItem::title)
                 .findFirst()
-                .orElse("섹션"));
+                .orElseGet(() -> newsViewService.wikiSections().stream()
+                        .filter(section -> section.slug().equals(slug))
+                        .map(com.newswiki.dto.WikiSection::title)
+                        .findFirst()
+                        .orElse("섹션")));
         model.addAttribute("pages", newsViewService.wikiPagesBySection(slug));
+        model.addAttribute("sections", newsViewService.wikiSections());
         return "pages/sections";
     }
 }

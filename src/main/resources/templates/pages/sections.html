@@ -27,14 +27,7 @@
       </section>
     </section>
     <aside>
-      <section class="module">
-        <div class="module__header">
-          <h2 class="module__title">관련 위키</h2>
-        </div>
-        <div class="article-item">
-          <p class="summary-text">섹션은 Codex가 DB에서 생성, 수정, 삭제합니다. 화면은 현재 DB 상태를 그대로 표시합니다.</p>
-        </div>
-      </section>
+      <th:block th:replace="~{fragments/section-list :: sectionList(${sections})}"></th:block>
     </aside>
   </div>
 </th:block>
