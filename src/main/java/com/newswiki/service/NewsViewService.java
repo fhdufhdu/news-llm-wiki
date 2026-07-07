@@ -110,7 +110,7 @@ public class NewsViewService {
                 : "최근 수집 기사와 AI 위키 노트를 바탕으로 주요 흐름을 표시합니다. AI 노트가 아직 없는 기사는 처리 상태를 함께 보여줍니다.";
         return new HomeView(
                 "오늘의 뉴스",
-                Instant.now().toString(),
+                timeDisplayService.format(Instant.now().toString()),
                 articles.size(),
                 summary,
                 articles

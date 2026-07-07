@@ -8,8 +8,8 @@
       <h1 class="page-title" th:text="${view.title}">오늘의 뉴스</h1>
       <section class="frontpage-summary">
         <div class="meta-row">
-          <span th:text="${todaySummary.wikiPageCount + ' today wiki pages'}">0 today wiki pages</span>
-          <span th:text="${todaySummary.articleCount + ' articles'}">0 articles</span>
+          <span th:text="${todaySummary.wikiPageCount + '개 오늘 위키'}">0개 오늘 위키</span>
+          <span th:text="${todaySummary.articleCount + '개 기사'}">0개 기사</span>
           <span th:text="${view.generatedAt}">생성 대기</span>
         </div>
         <p class="summary-text" th:text="${todaySummary.summary}">오늘의 요약</p>
