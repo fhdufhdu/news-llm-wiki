@@ -66,8 +66,8 @@ public class WikiPageRepository {
     public TodaySummaryView findTodaySummary(String date) {
         int articleCount = intValue(entityManager.createNativeQuery("""
                 select count(*)
-                  from articles
-                 where date(datetime(coalesce(published_at, ingested_at, collected_at), '+9 hours')) = :date
+                 from articles
+                 where date(datetime(coalesce(ingested_at, collected_at, published_at), '+9 hours')) = :date
                 """)
                 .setParameter("date", date)
                 .getSingleResult());
@@ -77,7 +77,7 @@ public class WikiPageRepository {
                   join wiki_page_sources ps on ps.wiki_page_id = p.id
                   join articles a on a.id = ps.article_id
                  where p.status = 'ACTIVE'
-                   and date(datetime(coalesce(a.published_at, a.ingested_at, a.collected_at), '+9 hours')) = :date
+                   and date(datetime(coalesce(a.ingested_at, a.collected_at, a.published_at), '+9 hours')) = :date
                  order by p.importance desc, p.updated_at desc
                  limit 8
                 """)

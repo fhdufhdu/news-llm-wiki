@@ -84,12 +84,38 @@ class WikiPageRepositoryTest {
         assertThat(summary.pages()).extracting(WikiPageListItem::title).containsExactly("삼성전자 실적");
     }
 
+    @Test
+    void todaySummaryUsesIngestedDateBeforePublishedDate() {
+        long articleId = insertArticlePublishedYesterdayButIngestedToday();
+        long majorId = insertCategory("technology", "기술", "기술 흐름", 10, 1);
+        long subcategoryId = insertCategory("product-design", "제품 설계", "제품 설계 흐름", 100, 0);
+        long pageId = insertPage(majorId, subcategoryId, "ai-product-design", "AI 제품 설계", "오늘 저장한 기사 기반 위키", "본문", 80);
+        jdbc.update("""
+                insert into wiki_page_sources(wiki_page_id, article_id, contribution_summary, evidence_type, created_at)
+                values(?, ?, '오늘 저장한 GeekNews 글', 'reported', datetime('now'))
+                """, pageId, articleId);
+
+        var summary = repository.findTodaySummary(java.time.LocalDate.now(java.time.ZoneId.of("Asia/Seoul")).toString());
+
+        assertThat(summary.articleCount()).isGreaterThanOrEqualTo(1);
+        assertThat(summary.pages()).extracting(WikiPageListItem::title).contains("AI 제품 설계");
+    }
+
     private long insertArticle() {
         jdbc.update("""
                 insert into articles(source_id, canonical_url, title, feed_url, ingested_at, content_hash, raw_status, wiki_status)
                 values('wiki-source-1', 'https://example.com/wiki-article', '근거 기사', 'https://example.com/rss', datetime('now'), 'hash', 'FETCHED', 'DONE')
                 """);
         return jdbc.queryForObject("select id from articles where source_id='wiki-source-1'", Long.class);
+    }
+
+    private long insertArticlePublishedYesterdayButIngestedToday() {
+        jdbc.update("""
+                insert into articles(source_id, canonical_url, title, feed_url, published_at, ingested_at, content_hash, raw_status, wiki_status)
+                values('wiki-source-yesterday', 'https://example.com/yesterday', '어제 발행 오늘 저장', 'https://example.com/rss',
+                       datetime('now', '-1 day'), datetime('now'), 'hash-yesterday', 'FETCHED', 'DONE')
+                """);
+        return jdbc.queryForObject("select id from articles where source_id='wiki-source-yesterday'", Long.class);
     }
 
     private long insertCategory(String slug, String title, String summary, int displayOrder, int fixed) {

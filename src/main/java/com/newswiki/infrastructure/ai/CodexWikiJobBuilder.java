@@ -237,9 +237,9 @@ public class CodexWikiJobBuilder {
                     with connect() as con:
                         articles = [dict(r) for r in con.execute(\"\"\"
                             select id, title, canonical_url, published_at, ingested_at, wiki_status
-                              from articles
-                             where date(datetime(coalesce(published_at, ingested_at, collected_at), '+9 hours')) = ?
-                             order by coalesce(published_at, ingested_at, collected_at) desc, id desc
+                             from articles
+                             where date(datetime(coalesce(ingested_at, collected_at, published_at), '+9 hours')) = ?
+                             order by coalesce(ingested_at, collected_at, published_at) desc, id desc
                              limit ?
                         \"\"\", (summary_date, limit))]
                         pages = [dict(r) for r in con.execute(\"\"\"
@@ -248,7 +248,7 @@ public class CodexWikiJobBuilder {
                               join wiki_page_sources ps on ps.wiki_page_id = p.id
                               join articles a on a.id = ps.article_id
                              where p.status='ACTIVE'
-                               and date(datetime(coalesce(a.published_at, a.ingested_at, a.collected_at), '+9 hours')) = ?
+                               and date(datetime(coalesce(a.ingested_at, a.collected_at, a.published_at), '+9 hours')) = ?
                              order by p.importance desc, p.updated_at desc, p.title asc
                              limit ?
                         \"\"\", (summary_date, limit))]
