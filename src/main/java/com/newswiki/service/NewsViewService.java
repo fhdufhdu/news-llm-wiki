@@ -22,16 +22,23 @@ import java.util.List;
 public class NewsViewService {
     private final ArticleRepository articleRepository;
     private final WikiPageRepository wikiPageRepository;
+    private final TimeDisplayService timeDisplayService;
 
     @Autowired
-    public NewsViewService(ArticleRepository articleRepository, WikiPageRepository wikiPageRepository) {
+    public NewsViewService(ArticleRepository articleRepository, WikiPageRepository wikiPageRepository, TimeDisplayService timeDisplayService) {
         this.articleRepository = articleRepository;
         this.wikiPageRepository = wikiPageRepository;
+        this.timeDisplayService = timeDisplayService;
+    }
+
+    public NewsViewService(ArticleRepository articleRepository, WikiPageRepository wikiPageRepository) {
+        this(articleRepository, wikiPageRepository, new TimeDisplayService());
     }
 
     public NewsViewService(ArticleRepository articleRepository) {
         this.articleRepository = articleRepository;
         this.wikiPageRepository = null;
+        this.timeDisplayService = new TimeDisplayService();
     }
 
     public List<SectionNavItem> sectionNav(String activeSlug) {
@@ -49,7 +56,7 @@ public class NewsViewService {
     }
 
     public List<WikiPageListItem> recentWikiPages(int limit) {
-        return wikiPageRepository.findRecentPages(limit);
+        return formatWikiPages(wikiPageRepository.findRecentPages(limit));
     }
 
     public TodaySummary todaySummary() {
@@ -63,16 +70,29 @@ public class NewsViewService {
                 summary.articleCount(),
                 summary.wikiPageCount(),
                 summary.summary(),
-                summary.pages()
+                formatWikiPages(summary.pages())
         );
     }
 
     public List<WikiPageListItem> wikiPagesBySection(String sectionSlug) {
-        return wikiPageRepository.findPagesBySection(sectionSlug);
+        return formatWikiPages(wikiPageRepository.findPagesBySection(sectionSlug));
     }
 
     public WikiPageDetail wikiPage(String slug) {
-        return wikiPageRepository.findPageBySlug(slug);
+        var page = wikiPageRepository.findPageBySlug(slug);
+        if (page == null) {
+            return null;
+        }
+        return new WikiPageDetail(
+                page.id(),
+                page.slug(),
+                page.title(),
+                page.summary(),
+                page.body(),
+                page.importance(),
+                timeDisplayService.format(page.updatedAt()),
+                page.sources()
+        );
     }
 
     public HomeView home() {
@@ -94,7 +114,20 @@ public class NewsViewService {
     }
 
     public ArticleRepository.ArticleDetailView article(long id) {
-        return articleRepository.findArticleDetail(id);
+        var article = articleRepository.findArticleDetail(id);
+        if (article == null) {
+            return null;
+        }
+        return new ArticleRepository.ArticleDetailView(
+                article.id(),
+                article.title(),
+                article.canonicalUrl(),
+                article.feedUrl(),
+                timeDisplayService.format(article.publishedAt()),
+                timeDisplayService.format(article.ingestedAt()),
+                article.rawStatus(),
+                article.wikiStatus()
+        );
     }
 
     public List<String> articleTopics(long id) {
@@ -108,12 +141,25 @@ public class NewsViewService {
             items.add(new ArticleListItem(
                     row.id(),
                     row.title(),
-                    row.publishedAt() == null ? "" : row.publishedAt(),
+                    timeDisplayService.format(row.publishedAt()),
                     row.summary(),
                     row.durability(),
                     chips
             ));
         }
         return items;
+    }
+
+    private List<WikiPageListItem> formatWikiPages(List<WikiPageListItem> pages) {
+        return pages.stream()
+                .map(page -> new WikiPageListItem(
+                        page.id(),
+                        page.slug(),
+                        page.title(),
+                        page.summary(),
+                        page.importance(),
+                        timeDisplayService.format(page.updatedAt())
+                ))
+                .toList();
     }
 }

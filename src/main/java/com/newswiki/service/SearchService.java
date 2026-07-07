@@ -9,8 +9,25 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class SearchService {
     private final SearchRepository searchRepository;
+    private final TimeDisplayService timeDisplayService;
 
     public SearchResults search(String query) {
-        return searchRepository.search(query, 20);
+        SearchResults results = searchRepository.search(query, 20);
+        return new SearchResults(
+                results.query(),
+                results.wikiPages().stream().map(this::format).toList(),
+                results.articles().stream().map(this::format).toList()
+        );
+    }
+
+    private com.newswiki.dto.SearchResult format(com.newswiki.dto.SearchResult result) {
+        return new com.newswiki.dto.SearchResult(
+                result.type(),
+                result.id(),
+                result.title(),
+                result.url(),
+                result.summary(),
+                timeDisplayService.format(result.updatedAt())
+        );
     }
 }

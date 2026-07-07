@@ -16,7 +16,7 @@
             <a class="wiki-page-card__title" th:href="@{/wiki/{slug}(slug=${page.slug})}" th:text="${page.title}">위키 문서</a>
             <p class="summary-text" th:text="${page.summary}">요약</p>
             <div class="meta-row">
-              <span th:text="${'importance ' + page.importance}">importance</span>
+              <span th:text="${'중요도 ' + page.importance}">중요도</span>
               <span th:text="${page.updatedAt}">updated</span>
             </div>
           </article>
