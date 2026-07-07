@@ -30,7 +30,6 @@ class WikiPageRepositoryTest {
         jdbc.update("delete from wiki_sections");
         jdbc.update("delete from article_raw_sources");
         jdbc.update("delete from articles");
-        jdbc.update("delete from providers where slug = 'wiki-test-provider'");
     }
 
     @Test
@@ -44,8 +43,7 @@ class WikiPageRepositoryTest {
 
     @Test
     void readsPageDetailWithSources() {
-        long providerId = insertProvider();
-        long articleId = insertArticle(providerId);
+        long articleId = insertArticle();
         long sectionId = insertSection("ai", "AI", "AI 흐름", 10);
         long pageId = insertPage(sectionId, "gpu-power", "GPU 전력", "전력 병목", "본문", 90);
         jdbc.update("""
@@ -57,23 +55,14 @@ class WikiPageRepositoryTest {
 
         assertThat(detail.title()).isEqualTo("GPU 전력");
         assertThat(detail.sources()).hasSize(1);
-        assertThat(detail.sources().getFirst().providerName()).isEqualTo("위키테스트");
         assertThat(detail.sources().getFirst().contributionSummary()).isEqualTo("전력 인프라 근거");
     }
 
-    private long insertProvider() {
+    private long insertArticle() {
         jdbc.update("""
-                insert into providers(slug, name, homepage_url, description, display_order, enabled, created_at, updated_at)
-                values('wiki-test-provider', '위키테스트', 'https://example.com', '', 999, 1, datetime('now'), datetime('now'))
+                insert into articles(source_id, canonical_url, title, feed_url, ingested_at, content_hash, raw_status, wiki_status)
+                values('wiki-source-1', 'https://example.com/wiki-article', '근거 기사', 'https://example.com/rss', datetime('now'), 'hash', 'FETCHED', 'DONE')
                 """);
-        return jdbc.queryForObject("select id from providers where slug='wiki-test-provider'", Long.class);
-    }
-
-    private long insertArticle(long providerId) {
-        jdbc.update("""
-                insert into articles(source_id, canonical_url, provider_id, title, feed_url, ingested_at, content_hash, raw_status, wiki_status)
-                values('wiki-source-1', 'https://example.com/wiki-article', ?, '근거 기사', 'https://example.com/rss', datetime('now'), 'hash', 'FETCHED', 'DONE')
-                """, providerId);
         return jdbc.queryForObject("select id from articles where source_id='wiki-source-1'", Long.class);
     }
 

@@ -6,8 +6,6 @@ public record Article(
         long id,
         String sourceId,
         String canonicalUrl,
-        long providerId,
-        String providerName,
         String title,
         String feedUrl,
         Instant publishedAt,

@@ -20,7 +20,6 @@ public class ArticleRepository {
     public long insertArticleIfAbsent(
             String sourceId,
             String canonicalUrl,
-            long providerId,
             String title,
             String feedUrl,
             Instant publishedAt,
@@ -28,13 +27,12 @@ public class ArticleRepository {
     ) {
         entityManager.createNativeQuery("""
                 insert or ignore into articles
-                    (source_id, canonical_url, provider_id, title, feed_url, published_at, ingested_at, content_hash)
+                    (source_id, canonical_url, title, feed_url, published_at, ingested_at, content_hash)
                 values
-                    (:sourceId, :canonicalUrl, :providerId, :title, :feedUrl, :publishedAt, :ingestedAt, :contentHash)
+                    (:sourceId, :canonicalUrl, :title, :feedUrl, :publishedAt, :ingestedAt, :contentHash)
                 """)
                 .setParameter("sourceId", sourceId)
                 .setParameter("canonicalUrl", canonicalUrl)
-                .setParameter("providerId", providerId)
                 .setParameter("title", title)
                 .setParameter("feedUrl", feedUrl)
                 .setParameter("publishedAt", publishedAt == null ? null : publishedAt.toString())
@@ -69,20 +67,19 @@ public class ArticleRepository {
     @Transactional
     public long saveManualRawArticle(
             String canonicalUrl,
-            long providerId,
             String title,
             String rawHtml,
             int httpStatus,
-            String contentHash
+            String contentHash,
+            Instant publishedAt
     ) {
         String sourceId = "manual-" + contentHash.substring(0, Math.min(16, contentHash.length()));
         long articleId = insertArticleIfAbsent(
                 sourceId,
                 canonicalUrl,
-                providerId,
                 title == null || title.isBlank() ? canonicalUrl : title,
                 "manual",
-                null,
+                publishedAt,
                 contentHash
         );
         saveRawHtml(articleId, rawHtml, contentHash, httpStatus);
@@ -184,38 +181,20 @@ public class ArticleRepository {
     public List<ArticleListView> findLatestArticles(int limit) {
         return articleList("""
                 select a.id, a.title, a.canonical_url, a.published_at, a.wiki_status,
-                       p.name as provider_name,
                        '원문 수집 상태: ' || a.raw_status || ', 위키 처리 상태: ' || a.wiki_status as summary,
                        lower(a.wiki_status) as durability
                   from articles a
-                  join providers p on p.id = a.provider_id
                  order by coalesce(a.published_at, a.ingested_at) desc, a.id desc
                  limit :limit
-                """, limit, null);
-    }
-
-    @Transactional(readOnly = true)
-    public List<ArticleListView> findLatestArticlesByProvider(String providerSlug, int limit) {
-        return articleList("""
-                select a.id, a.title, a.canonical_url, a.published_at, a.wiki_status,
-                       p.name as provider_name,
-                       '원문 수집 상태: ' || a.raw_status || ', 위키 처리 상태: ' || a.wiki_status as summary,
-                       lower(a.wiki_status) as durability
-                  from articles a
-                  join providers p on p.id = a.provider_id
-                 where p.slug = :providerSlug
-                 order by coalesce(a.published_at, a.ingested_at) desc, a.id desc
-                 limit :limit
-                """, limit, providerSlug);
+                """, limit);
     }
 
     @Transactional(readOnly = true)
     public ArticleDetailView findArticleDetail(long id) {
         List<?> rows = entityManager.createNativeQuery("""
                 select a.id, a.title, a.canonical_url, a.feed_url, a.published_at, a.ingested_at,
-                       a.raw_status, a.wiki_status, p.name as provider_name
+                       a.raw_status, a.wiki_status
                   from articles a
-                  join providers p on p.id = a.provider_id
                 where a.id = :id
                 """)
                 .setParameter("id", id)
@@ -232,16 +211,12 @@ public class ArticleRepository {
                 stringValue(values[4]),
                 stringValue(values[5]),
                 stringValue(values[6]),
-                stringValue(values[7]),
-                stringValue(values[8])
+                stringValue(values[7])
         );
     }
 
-    private List<ArticleListView> articleList(String sql, int limit, String providerSlug) {
+    private List<ArticleListView> articleList(String sql, int limit) {
         var query = entityManager.createNativeQuery(sql).setParameter("limit", limit);
-        if (providerSlug != null) {
-            query.setParameter("providerSlug", providerSlug);
-        }
         return query.getResultStream()
                 .map(row -> {
                     Object[] values = (Object[]) row;
@@ -252,7 +227,6 @@ public class ArticleRepository {
                             stringValue(values[3]),
                             stringValue(values[5]),
                             stringValue(values[6]),
-                            stringValue(values[7]),
                             stringValue(values[4])
                     );
                 })
@@ -272,7 +246,6 @@ public class ArticleRepository {
             String title,
             String canonicalUrl,
             String publishedAt,
-            String providerName,
             String summary,
             String durability,
             String wikiStatus
@@ -287,8 +260,7 @@ public class ArticleRepository {
             String publishedAt,
             String ingestedAt,
             String rawStatus,
-            String wikiStatus,
-            String providerName
+            String wikiStatus
     ) {
     }
 }

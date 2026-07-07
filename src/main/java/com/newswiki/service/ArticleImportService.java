@@ -2,11 +2,11 @@ package com.newswiki.service;
 
 import com.newswiki.dto.ArticleImportProgress;
 import com.newswiki.infrastructure.http.ArticleFetcher;
+import com.newswiki.infrastructure.text.ArticleDateExtractor;
 import com.newswiki.infrastructure.text.UrlCanonicalizer;
 import com.newswiki.repository.ArticleImportRepository;
 import com.newswiki.repository.ArticleRepository;
 import com.newswiki.repository.JobRunRepository;
-import com.newswiki.repository.WikiRepository;
 import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
 import org.springframework.core.task.TaskExecutor;
@@ -18,16 +18,14 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class ArticleImportService {
-    private static final String MANUAL_PROVIDER_NAME = "Manual";
-
     private final ArticleImportRepository importRepository;
     private final ArticleRepository articleRepository;
-    private final WikiRepository wikiRepository;
     private final ArticleFetcher articleFetcher;
     private final ArticleService articleService;
     private final CodexWikiService codexWikiService;
     private final JobRunRepository jobRunRepository;
     private final TaskExecutor jobTaskExecutor;
+    private final ArticleDateExtractor articleDateExtractor;
     private final UrlCanonicalizer canonicalizer = new UrlCanonicalizer();
 
     public long submitUrls(String rawUrls) {
@@ -48,7 +46,6 @@ public class ArticleImportService {
         int failed = 0;
         try {
             var items = importRepository.claimPendingItems(jobId, Math.max(1, progress.job().totalCount()));
-            long providerId = wikiRepository.upsertProviderByName(MANUAL_PROVIDER_NAME);
             for (var item : items) {
                 try {
                     String canonicalUrl = canonicalizer.canonicalize(item.inputUrl());
@@ -62,11 +59,11 @@ public class ArticleImportService {
                         String hash = articleService.sha256(canonicalUrl + "\n" + html);
                         articleId = articleRepository.saveManualRawArticle(
                                 canonicalUrl,
-                                providerId,
                                 extractTitle(html, canonicalUrl),
                                 html,
                                 fetchedArticle.statusCode(),
-                                hash
+                                hash,
+                                articleDateExtractor.extractPublishedAt(html).orElse(null)
                         );
                         jobRunRepository.appendLog(runId, "INFO", "기사 원문 저장: " + canonicalUrl);
                     } else {

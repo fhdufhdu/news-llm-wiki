@@ -51,8 +51,7 @@
   abstraction을 미리 만들지 않는다.
 - YAGNI, KISS, DRY를 따른다. 지금 필요한 URL import, raw 저장, 위키 데이터 생성,
   조회 화면에 필요한 코드만 만든다.
-- `GeekNews`는 section이 아니라 provider다.
-- section navigation과 provider 목록은 hard-code하지 말고 DB row에서 조회한다.
+- 상단 section navigation은 고정 섹션만 표시한다. Codex가 만든 동적 섹션은 위키 데이터로만 유지한다.
 
 ## 검증
 

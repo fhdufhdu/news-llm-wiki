@@ -13,8 +13,8 @@
 - Controllers must compose services only, not repositories.
 - Package order remains `application / service / repository / infrastructure / dto`.
 - Server mechanically fetches URLs and stores raw HTML; LLM only updates wiki data.
-- `GeekNews` is a provider, not a section.
-- Section navigation and provider lists come from DB rows.
+- Section navigation uses fixed navigation rows; Codex-created wiki sections are shown in the right-side section list.
+- Source-listing features are removed from the active runtime.
 - YAGNI, KISS, DRY.
 - RSS-related runtime code and UI copy must be removed, not merely hidden.
 - Existing applied Flyway migrations are not deleted.

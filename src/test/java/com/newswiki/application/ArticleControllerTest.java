@@ -31,8 +31,7 @@ class ArticleControllerTest {
                         "2026-07-03T00:00:00Z",
                         "2026-07-03T00:01:00Z",
                         "FETCHED",
-                        "DONE",
-                        "샘플뉴스"
+                        "DONE"
                 );
             }
         });

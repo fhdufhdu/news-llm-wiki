@@ -2,7 +2,6 @@ package com.newswiki.infrastructure.importer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.newswiki.repository.ArticleRepository;
-import com.newswiki.repository.WikiRepository;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -14,12 +13,10 @@ import java.time.Instant;
 public class ExistingCorpusImporter {
     private final ObjectMapper objectMapper;
     private final ArticleRepository articleRepository;
-    private final WikiRepository wikiRepository;
 
-    public ExistingCorpusImporter(ObjectMapper objectMapper, ArticleRepository articleRepository, WikiRepository wikiRepository) {
+    public ExistingCorpusImporter(ObjectMapper objectMapper, ArticleRepository articleRepository) {
         this.objectMapper = objectMapper;
         this.articleRepository = articleRepository;
-        this.wikiRepository = wikiRepository;
     }
 
     public int importSourceIndex(Path sourceIndexJsonl) {
@@ -35,11 +32,9 @@ public class ExistingCorpusImporter {
     private int importLine(String line) {
         try {
             SourceIndexRow row = objectMapper.readValue(line, SourceIndexRow.class);
-            long providerId = wikiRepository.upsertProviderByName(row.publisher());
             articleRepository.insertArticleIfAbsent(
                     row.source_id(),
                     row.canonical_url(),
-                    providerId,
                     row.title(),
                     row.feed_url(),
                     row.published() == null || row.published().isBlank() ? null : Instant.parse(row.published()),

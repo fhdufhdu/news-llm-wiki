@@ -283,6 +283,32 @@
   background: var(--color-surface-subtle-alt);
 }
 
+.section-list {
+  display: grid;
+}
+
+.section-list__item {
+  display: grid;
+  gap: 4px;
+  padding: 12px var(--space-4);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.section-list__item:last-child {
+  border-bottom: 0;
+}
+
+.section-list__item strong {
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+}
+
+.section-list__item span {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-readable);
+}
+
 @media (max-width: 720px) {
   .summary-grid,
   .import-table__row {

@@ -20,9 +20,6 @@ class ArticleRepositoryTest {
     ArticleRepository repository;
 
     @Autowired
-    WikiRepository wikiRepository;
-
-    @Autowired
     JdbcTemplate jdbcTemplate;
 
     @BeforeEach
@@ -30,16 +27,13 @@ class ArticleRepositoryTest {
         jdbcTemplate.update("delete from article_raw_sources");
         jdbcTemplate.update("delete from article_raw");
         jdbcTemplate.update("delete from articles");
-        jdbcTemplate.update("delete from providers where slug = 'sample-provider'");
     }
 
     @Test
     void insertsArticleOnceByCanonicalUrl() {
-        long providerId = wikiRepository.upsertProviderByName("Sample Provider");
         long first = repository.insertArticleIfAbsent(
                 "source-a",
                 "https://example.com/a",
-                providerId,
                 "제목",
                 "https://example.com/rss",
                 Instant.parse("2026-07-02T00:00:00Z"),
@@ -49,7 +43,6 @@ class ArticleRepositoryTest {
         long second = repository.insertArticleIfAbsent(
                 "source-a",
                 "https://example.com/a",
-                providerId,
                 "제목",
                 "https://example.com/rss",
                 Instant.parse("2026-07-02T00:00:00Z"),
@@ -63,11 +56,9 @@ class ArticleRepositoryTest {
 
     @Test
     void savesRawHtmlAsTextAndMarksArticlePendingForWiki() {
-        long providerId = wikiRepository.upsertProviderByName("Sample Provider");
         long articleId = repository.insertArticleIfAbsent(
                 "source-raw-text",
                 "https://example.com/raw-text",
-                providerId,
                 "테스트 기사",
                 "https://example.com/rss",
                 Instant.parse("2026-07-03T00:00:00Z"),
@@ -93,15 +84,13 @@ class ArticleRepositoryTest {
 
     @Test
     void savesManualRawArticleAndCanFindItByCanonicalUrl() {
-        long providerId = wikiRepository.upsertProviderByName("Manual");
-
         long articleId = repository.saveManualRawArticle(
                 "https://example.com/manual",
-                providerId,
                 "수동 기사",
                 "<html><title>수동 기사</title><body>본문</body></html>",
                 200,
-                "0123456789abcdef0123"
+                "0123456789abcdef0123",
+                Instant.parse("2026-07-07T00:00:00Z")
         );
 
         assertThat(repository.findIdByCanonicalUrl("https://example.com/manual")).contains(articleId);
@@ -119,11 +108,9 @@ class ArticleRepositoryTest {
 
     @Test
     void recoversInterruptedWikiRunningArticles() {
-        long providerId = wikiRepository.upsertProviderByName("Sample Provider");
         long articleId = repository.insertArticleIfAbsent(
                 "source-wiki-running",
                 "https://example.com/wiki-running",
-                providerId,
                 "제목",
                 "https://example.com/rss",
                 Instant.parse("2026-07-02T00:00:00Z"),

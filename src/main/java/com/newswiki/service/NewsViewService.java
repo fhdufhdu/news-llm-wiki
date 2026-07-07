@@ -2,48 +2,46 @@ package com.newswiki.service;
 
 import com.newswiki.dto.ArticleListItem;
 import com.newswiki.dto.HomeView;
-import com.newswiki.dto.Provider;
 import com.newswiki.dto.SectionNavItem;
 import com.newswiki.dto.WikiPageDetail;
 import com.newswiki.dto.WikiPageListItem;
 import com.newswiki.dto.WikiSection;
+import com.newswiki.dto.TodaySummary;
 import com.newswiki.repository.ArticleRepository;
 import com.newswiki.repository.WikiPageRepository;
-import com.newswiki.repository.WikiRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class NewsViewService {
     private final ArticleRepository articleRepository;
-    private final WikiRepository wikiRepository;
     private final WikiPageRepository wikiPageRepository;
 
     @Autowired
-    public NewsViewService(ArticleRepository articleRepository, WikiRepository wikiRepository, WikiPageRepository wikiPageRepository) {
+    public NewsViewService(ArticleRepository articleRepository, WikiPageRepository wikiPageRepository) {
         this.articleRepository = articleRepository;
-        this.wikiRepository = wikiRepository;
         this.wikiPageRepository = wikiPageRepository;
     }
 
-    public NewsViewService(ArticleRepository articleRepository, WikiRepository wikiRepository) {
+    public NewsViewService(ArticleRepository articleRepository) {
         this.articleRepository = articleRepository;
-        this.wikiRepository = wikiRepository;
         this.wikiPageRepository = null;
     }
 
     public List<SectionNavItem> sectionNav(String activeSlug) {
         if (wikiPageRepository != null) {
             String active = activeSlug == null ? "" : activeSlug;
-            return wikiPageRepository.findSections().stream()
+            return wikiPageRepository.findFixedNavSections().stream()
                     .map(section -> new SectionNavItem(section.slug(), section.title(), section.slug().equals(active)))
                     .toList();
         }
-        return wikiRepository.findEnabledSectionsForNav(activeSlug == null ? "" : activeSlug);
+        return List.of();
     }
 
     public List<WikiSection> wikiSections() {
@@ -52,6 +50,21 @@ public class NewsViewService {
 
     public List<WikiPageListItem> recentWikiPages(int limit) {
         return wikiPageRepository.findRecentPages(limit);
+    }
+
+    public TodaySummary todaySummary() {
+        String date = LocalDate.now(ZoneId.of("Asia/Seoul")).toString();
+        if (wikiPageRepository == null) {
+            return new TodaySummary(date, 0, 0, "오늘 저장된 기사 원문을 바탕으로 위키 문서가 생성되면 이 영역에 주요 흐름을 표시합니다.", List.of());
+        }
+        var summary = wikiPageRepository.findTodaySummary(date);
+        return new TodaySummary(
+                summary.date(),
+                summary.articleCount(),
+                summary.wikiPageCount(),
+                summary.summary(),
+                summary.pages()
+        );
     }
 
     public List<WikiPageListItem> wikiPagesBySection(String sectionSlug) {
@@ -76,18 +89,6 @@ public class NewsViewService {
         );
     }
 
-    public List<Provider> providers() {
-        return wikiRepository.findEnabledProviders();
-    }
-
-    public Provider provider(String slug) {
-        return wikiRepository.findEnabledProviderBySlug(slug);
-    }
-
-    public List<ArticleListItem> providerArticles(String slug) {
-        return toListItems(articleRepository.findLatestArticlesByProvider(slug, 80));
-    }
-
     public List<ArticleListItem> latestArticles() {
         return toListItems(articleRepository.findLatestArticles(80));
     }
@@ -97,25 +98,16 @@ public class NewsViewService {
     }
 
     public List<String> articleTopics(long id) {
-        return wikiRepository.findArticleTopicTitles(id, 20);
-    }
-
-    public List<WikiRepository.WikiItem> topics() {
-        return wikiRepository.findTopics(100);
-    }
-
-    public WikiRepository.WikiItem topic(String slug) {
-        return wikiRepository.findTopic(slug);
+        return wikiPageRepository == null ? List.of() : wikiPageRepository.findPageTitlesByArticleId(id, 20);
     }
 
     private List<ArticleListItem> toListItems(List<ArticleRepository.ArticleListView> rows) {
         List<ArticleListItem> items = new ArrayList<>();
         for (ArticleRepository.ArticleListView row : rows) {
-            List<String> chips = wikiRepository.findArticleTopicTitles(row.id(), 5);
+            List<String> chips = wikiPageRepository == null ? List.of() : wikiPageRepository.findPageTitlesByArticleId(row.id(), 5);
             items.add(new ArticleListItem(
                     row.id(),
                     row.title(),
-                    row.providerName(),
                     row.publishedAt() == null ? "" : row.publishedAt(),
                     row.summary(),
                     row.durability(),

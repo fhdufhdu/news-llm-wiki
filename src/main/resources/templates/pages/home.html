@@ -8,10 +8,26 @@
       <h1 class="page-title" th:text="${view.title}">오늘의 뉴스</h1>
       <section class="frontpage-summary">
         <div class="meta-row">
-          <span th:text="${pages.size() + ' wiki pages'}">0 wiki pages</span>
+          <span th:text="${todaySummary.wikiPageCount + ' today wiki pages'}">0 today wiki pages</span>
+          <span th:text="${todaySummary.articleCount + ' articles'}">0 articles</span>
           <span th:text="${view.generatedAt}">생성 대기</span>
         </div>
-        <p class="summary-text">수집된 원문을 바탕으로 Codex가 갱신한 위키 문서를 표시합니다.</p>
+        <p class="summary-text" th:text="${todaySummary.summary}">오늘의 요약</p>
+      </section>
+      <section class="module">
+        <div class="module__header">
+          <h2 class="module__title">오늘의 요약</h2>
+          <span class="status-badge" th:text="${todaySummary.date}">today</span>
+        </div>
+        <div class="wiki-page-list">
+          <article class="wiki-page-card" th:each="page : ${todaySummary.pages}">
+            <a class="wiki-page-card__title" th:href="@{/wiki/{slug}(slug=${page.slug})}" th:text="${page.title}">위키 문서</a>
+            <p class="summary-text" th:text="${page.summary}">요약</p>
+          </article>
+          <div class="article-item" th:if="${todaySummary.pages.isEmpty()}">
+            <p class="summary-text">오늘 수집된 기사와 연결된 위키 문서가 아직 없습니다.</p>
+          </div>
+        </div>
       </section>
       <section class="module">
         <div class="module__header">
@@ -42,6 +58,7 @@
           <p class="summary-text">원본 수집은 서버가 수행하고, 위키 데이터 생성은 Codex가 SQLite에 직접 기록합니다.</p>
         </div>
       </section>
+      <th:block th:replace="~{fragments/section-list :: sectionList(${sections})}"></th:block>
     </aside>
   </div>
 </th:block>

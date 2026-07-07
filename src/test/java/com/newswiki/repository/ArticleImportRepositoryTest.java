@@ -24,9 +24,6 @@ class ArticleImportRepositoryTest {
     ArticleRepository articleRepository;
 
     @Autowired
-    WikiRepository wikiRepository;
-
-    @Autowired
     JdbcTemplate jdbcTemplate;
 
     @BeforeEach
@@ -59,11 +56,9 @@ class ArticleImportRepositoryTest {
     void updatesItemStatusAndProgressCounts() {
         long jobId = repository.createJob(List.of("https://example.com/a"));
         long itemId = repository.findItems(jobId).getFirst().id();
-        long providerId = wikiRepository.upsertProviderByName("Manual");
         long articleId = articleRepository.insertArticleIfAbsent(
                 "manual-test",
                 "https://example.com/a",
-                providerId,
                 "테스트",
                 "manual",
                 null,

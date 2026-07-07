@@ -2,7 +2,6 @@ package com.newswiki.application;
 
 import com.newswiki.dto.SectionNavItem;
 import com.newswiki.dto.HomeView;
-import com.newswiki.dto.Provider;
 import com.newswiki.dto.ArticleListItem;
 import com.newswiki.dto.WikiPageDetail;
 import com.newswiki.dto.WikiPageListItem;
@@ -28,11 +27,6 @@ class HomeControllerTest {
         @Override
         public HomeView home() {
             return new HomeView("오늘의 뉴스", "now", 0, "요약", List.of());
-        }
-
-        @Override
-        public List<Provider> providers() {
-            return List.of();
         }
 
         @Override
@@ -68,7 +62,6 @@ class HomeControllerTest {
 
         assertThat(viewName).isEqualTo("pages/home");
         assertThat(model.get("sectionNav").toString()).contains("산업·AI", "국제");
-        assertThat(model.get("sectionNav").toString()).doesNotContain("GeekNews");
         assertThat(model.get("pages").toString()).contains("GPU 전력");
     }
 

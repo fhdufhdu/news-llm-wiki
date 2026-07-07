@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: html(content=~{::content}, pageTitle='검색 - News Wiki')}">
+<body>
+<th:block th:fragment="content">
+  <div class="page-grid">
+    <section>
+      <h1 class="page-title">검색</h1>
+      <section class="module">
+        <div class="module__header">
+          <h2 class="module__title" th:if="${results.query == null || results.query.isBlank()}">검색어 없음</h2>
+          <h2 class="module__title" th:if="${results.query != null && !results.query.isBlank()}"
+              th:text="${results.query + ' 검색 결과'}">검색 결과</h2>
+          <span class="status-badge" th:text="${results.wikiPages.size() + results.articles.size() + ' results'}">0 results</span>
+        </div>
+        <div class="wiki-page-list">
+          <article class="wiki-page-card" th:each="item : ${results.wikiPages}">
+            <a class="wiki-page-card__title" th:href="${item.url}" th:text="${item.title}">위키 문서</a>
+            <p class="summary-text" th:text="${item.summary}">요약</p>
+            <div class="meta-row">
+              <span>위키</span>
+              <span th:text="${item.updatedAt}">updated</span>
+            </div>
+          </article>
+          <article class="wiki-page-card" th:each="item : ${results.articles}">
+            <a class="wiki-page-card__title" th:href="${item.url}" th:text="${item.title}">기사</a>
+            <p class="summary-text" th:text="${item.summary}">요약</p>
+            <div class="meta-row">
+              <span>기사</span>
+              <span th:text="${item.updatedAt}">updated</span>
+            </div>
+          </article>
+          <div class="article-item" th:if="${results.wikiPages.isEmpty() && results.articles.isEmpty()}">
+            <p class="summary-text">검색 결과가 없습니다.</p>
+          </div>
+        </div>
+      </section>
+    </section>
+    <aside th:replace="~{fragments/section-list :: sectionList(${sections})}"></aside>
+  </div>
+</th:block>
+</body>
+</html>

@@ -130,9 +130,8 @@ public class CodexWikiJobBuilder {
                 def get_article(article_id):
                     with connect() as con:
                         row = con.execute(\"\"\"
-                            select a.id, a.title, a.canonical_url, a.published_at, p.name provider_name, r.raw_html
+                            select a.id, a.title, a.canonical_url, a.published_at, r.raw_html
                               from articles a
-                              join providers p on p.id=a.provider_id
                               join article_raw_sources r on r.article_id=a.id
                              where a.id=?
                         \"\"\", (article_id,)).fetchone()

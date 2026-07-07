@@ -8,7 +8,7 @@
       <article class="wiki-document" th:if="${page != null}">
         <h1 class="page-title" th:text="${page.title}">위키 문서</h1>
         <p class="wiki-summary" th:text="${page.summary}">요약</p>
-        <section class="wiki-body" th:utext="${page.body}">본문</section>
+        <section class="wiki-body" th:utext="${bodyHtml}">본문</section>
       </article>
 
       <section class="module" th:if="${page == null}">
@@ -42,6 +42,9 @@
           <p class="summary-text" th:text="${source.contributionSummary}">반영 내용</p>
         </div>
       </section>
+    </aside>
+    <aside th:if="${page == null}">
+      <th:block th:replace="~{fragments/section-list :: sectionList(${sections})}"></th:block>
     </aside>
   </div>
 </th:block>

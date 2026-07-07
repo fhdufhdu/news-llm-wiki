@@ -10,6 +10,7 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+    mixed: true
   jpa:
     database-platform: org.hibernate.community.dialect.SQLiteDialect
     hibernate:

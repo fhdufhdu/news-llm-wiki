@@ -24,6 +24,7 @@ dependencies {
     implementation("org.hibernate.orm:hibernate-community-dialects")
     implementation("org.xerial:sqlite-jdbc:3.50.3.0")
     implementation("org.jsoup:jsoup:1.19.1")
+    implementation("org.commonmark:commonmark:0.24.0")
 
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
