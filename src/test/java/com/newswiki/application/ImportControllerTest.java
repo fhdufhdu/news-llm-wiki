@@ -3,7 +3,7 @@ package com.newswiki.application;
 import com.newswiki.dto.ArticleImportItem;
 import com.newswiki.dto.ArticleImportJob;
 import com.newswiki.dto.ArticleImportProgress;
-import com.newswiki.dto.SectionNavItem;
+import com.newswiki.dto.CategoryNavItem;
 import com.newswiki.service.ArticleImportService;
 import com.newswiki.service.NewsViewService;
 import org.junit.jupiter.api.Test;
@@ -40,8 +40,8 @@ class ImportControllerTest {
     private NewsViewService newsViewService() {
         return new NewsViewService(null, null) {
             @Override
-            public List<SectionNavItem> sectionNav(String activeSlug) {
-                return List.of(new SectionNavItem("ai", "AI", false));
+            public List<CategoryNavItem> categoryNav(String activeSlug) {
+                return List.of(new CategoryNavItem("ai", "AI", false));
             }
         };
     }

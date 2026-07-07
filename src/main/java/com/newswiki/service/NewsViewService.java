@@ -2,10 +2,10 @@ package com.newswiki.service;
 
 import com.newswiki.dto.ArticleListItem;
 import com.newswiki.dto.HomeView;
-import com.newswiki.dto.SectionNavItem;
+import com.newswiki.dto.CategoryNavItem;
 import com.newswiki.dto.WikiPageDetail;
 import com.newswiki.dto.WikiPageListItem;
-import com.newswiki.dto.WikiSection;
+import com.newswiki.dto.WikiCategory;
 import com.newswiki.dto.TodaySummary;
 import com.newswiki.repository.ArticleRepository;
 import com.newswiki.repository.WikiPageRepository;
@@ -41,25 +41,25 @@ public class NewsViewService {
         this.timeDisplayService = new TimeDisplayService();
     }
 
-    public List<SectionNavItem> sectionNav(String activeSlug) {
+    public List<CategoryNavItem> categoryNav(String activeSlug) {
         if (wikiPageRepository != null) {
             String active = activeSlug == null ? "" : activeSlug;
-            return wikiPageRepository.findFixedNavSections().stream()
-                    .map(section -> new SectionNavItem(section.slug(), section.title(), section.slug().equals(active)))
+            return wikiPageRepository.findFixedNavCategories().stream()
+                    .map(category -> new CategoryNavItem(category.slug(), category.title(), category.slug().equals(active)))
                     .toList();
         }
         return List.of();
     }
 
-    public List<WikiSection> wikiSections() {
-        return wikiPageRepository.findSections();
+    public List<WikiCategory> wikiCategories() {
+        return wikiPageRepository.findCategories();
     }
 
-    public List<WikiSection> majorCategories() {
+    public List<WikiCategory> majorCategories() {
         return wikiPageRepository == null ? List.of() : wikiPageRepository.findMajorCategories();
     }
 
-    public List<WikiSection> subcategories() {
+    public List<WikiCategory> subcategories() {
         return wikiPageRepository == null ? List.of() : wikiPageRepository.findSubcategories();
     }
 
@@ -82,8 +82,8 @@ public class NewsViewService {
         );
     }
 
-    public List<WikiPageListItem> wikiPagesBySection(String sectionSlug) {
-        return formatWikiPages(wikiPageRepository.findPagesBySection(sectionSlug));
+    public List<WikiPageListItem> wikiPagesByCategory(String categorySlug) {
+        return formatWikiPages(wikiPageRepository.findPagesByCategory(categorySlug));
     }
 
     public WikiPageDetail wikiPage(String slug) {

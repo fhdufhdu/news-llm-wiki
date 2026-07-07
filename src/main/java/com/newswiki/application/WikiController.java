@@ -30,11 +30,11 @@ public class WikiController {
 
     @GetMapping("/topics")
     public String topics(Model model) {
-        model.addAttribute("sectionNav", newsViewService.sectionNav(""));
-        model.addAttribute("activeSectionSlug", "");
+        model.addAttribute("categoryNav", newsViewService.categoryNav(""));
+        model.addAttribute("activeCategorySlug", "");
         model.addAttribute("summary", wikiService.pendingSummary());
         model.addAttribute("pages", newsViewService.recentWikiPages(100));
-        model.addAttribute("sections", newsViewService.wikiSections());
+        model.addAttribute("categories", newsViewService.wikiCategories());
         model.addAttribute("majorCategories", newsViewService.majorCategories());
         model.addAttribute("subcategories", newsViewService.subcategories());
         return "pages/wiki-detail";
@@ -51,12 +51,12 @@ public class WikiController {
         if (page == null) {
             throw new ResponseStatusException(NOT_FOUND, "Wiki page not found");
         }
-        model.addAttribute("sectionNav", newsViewService.sectionNav(""));
-        model.addAttribute("activeSectionSlug", "");
+        model.addAttribute("categoryNav", newsViewService.categoryNav(""));
+        model.addAttribute("activeCategorySlug", "");
         model.addAttribute("page", page);
         model.addAttribute("bodyHtml", markdownService.render(page.body()));
         model.addAttribute("pages", newsViewService.recentWikiPages(20));
-        model.addAttribute("sections", newsViewService.wikiSections());
+        model.addAttribute("categories", newsViewService.wikiCategories());
         model.addAttribute("majorCategories", newsViewService.majorCategories());
         model.addAttribute("subcategories", newsViewService.subcategories());
         return "pages/wiki-detail";

@@ -19,10 +19,10 @@ public class SearchController {
 
     @GetMapping("/search")
     public String search(@RequestParam(value = "q", required = false) String query, Model model) {
-        model.addAttribute("sectionNav", newsViewService.sectionNav(""));
-        model.addAttribute("activeSectionSlug", "");
+        model.addAttribute("categoryNav", newsViewService.categoryNav(""));
+        model.addAttribute("activeCategorySlug", "");
         model.addAttribute("results", searchService.search(query));
-        model.addAttribute("sections", newsViewService.wikiSections());
+        model.addAttribute("categories", newsViewService.wikiCategories());
         model.addAttribute("majorCategories", newsViewService.majorCategories());
         model.addAttribute("subcategories", newsViewService.subcategories());
         return "pages/search";

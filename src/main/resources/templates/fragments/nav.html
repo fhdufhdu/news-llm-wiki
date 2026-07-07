@@ -1,21 +1,21 @@
-<nav class="section-nav" th:fragment="nav" xmlns:th="http://www.thymeleaf.org">
-  <div class="site-shell section-nav__inner">
-    <a class="section-nav__item"
-       th:classappend="${activeSectionSlug == ''} ? ' section-nav__item--active'"
+<nav class="category-nav" th:fragment="nav" xmlns:th="http://www.thymeleaf.org">
+  <div class="site-shell category-nav__inner">
+    <a class="category-nav__item"
+       th:classappend="${activeCategorySlug == ''} ? ' category-nav__item--active'"
        th:href="@{/}"
-       th:attr="aria-current=${activeSectionSlug == '' ? 'page' : null}">전체</a>
-    <a class="section-nav__item"
-       th:each="section : ${sectionNav}"
-       th:href="@{/sections/{slug}(slug=${section.slug})}"
-       th:classappend="${section.active} ? ' section-nav__item--active'"
-       th:attr="aria-current=${section.active ? 'page' : null}"
-       th:text="${section.title}">섹션</a>
-    <a class="section-nav__item" th:href="@{/topics}">위키</a>
-    <a class="section-nav__item" th:href="@{/imports}">기사 가져오기</a>
+       th:attr="aria-current=${activeCategorySlug == '' ? 'page' : null}">전체</a>
+    <a class="category-nav__item"
+       th:each="category : ${categoryNav}"
+       th:href="@{/categories/{slug}(slug=${category.slug})}"
+       th:classappend="${category.active} ? ' category-nav__item--active'"
+       th:attr="aria-current=${category.active ? 'page' : null}"
+       th:text="${category.title}">분류</a>
+    <a class="category-nav__item" th:href="@{/topics}">위키</a>
+    <a class="category-nav__item" th:href="@{/imports}">기사 가져오기</a>
   </div>
   <script>
     requestAnimationFrame(() => {
-      const active = document.querySelector('.section-nav__item--active');
+      const active = document.querySelector('.category-nav__item--active');
       if (active) active.scrollIntoView({block: 'nearest', inline: 'center'});
     });
   </script>

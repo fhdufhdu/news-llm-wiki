@@ -21,8 +21,8 @@ public class ImportController {
 
     @GetMapping("/imports")
     public String imports(Model model) {
-        model.addAttribute("sectionNav", newsViewService.sectionNav(""));
-        model.addAttribute("activeSectionSlug", "");
+        model.addAttribute("categoryNav", newsViewService.categoryNav(""));
+        model.addAttribute("activeCategorySlug", "");
         model.addAttribute("jobs", articleImportService.findRecentJobs());
         return "pages/imports";
     }
@@ -36,8 +36,8 @@ public class ImportController {
 
     @GetMapping("/imports/{jobId}")
     public String detail(@PathVariable long jobId, Model model) {
-        model.addAttribute("sectionNav", newsViewService.sectionNav(""));
-        model.addAttribute("activeSectionSlug", "");
+        model.addAttribute("categoryNav", newsViewService.categoryNav(""));
+        model.addAttribute("activeCategorySlug", "");
         model.addAttribute("progress", articleImportService.findProgress(jobId));
         return "pages/import-detail";
     }

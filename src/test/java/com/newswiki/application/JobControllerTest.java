@@ -1,7 +1,7 @@
 package com.newswiki.application;
 
 import com.newswiki.config.AppProperties;
-import com.newswiki.dto.SectionNavItem;
+import com.newswiki.dto.CategoryNavItem;
 import com.newswiki.repository.JobRunRepository;
 import com.newswiki.service.JobService;
 import com.newswiki.service.NewsViewService;
@@ -48,8 +48,8 @@ class JobControllerTest {
     private NewsViewService newsViewService() {
         return new NewsViewService(null, null) {
             @Override
-            public List<SectionNavItem> sectionNav(String activeSlug) {
-                return List.of(new SectionNavItem("industry-ai", "산업·AI", false));
+            public List<CategoryNavItem> categoryNav(String activeSlug) {
+                return List.of(new CategoryNavItem("industry-ai", "산업·AI", false));
             }
         };
     }

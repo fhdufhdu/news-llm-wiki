@@ -22,8 +22,8 @@ public class ArticleController {
         if (article == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Article not found");
         }
-        model.addAttribute("sectionNav", newsViewService.sectionNav(""));
-        model.addAttribute("activeSectionSlug", "");
+        model.addAttribute("categoryNav", newsViewService.categoryNav(""));
+        model.addAttribute("activeCategorySlug", "");
         model.addAttribute("article", article);
         return "pages/article-detail";
     }

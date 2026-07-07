@@ -15,10 +15,10 @@ public class HomeController {
 
     @GetMapping("/")
     public String home(Model model) {
-        model.addAttribute("sectionNav", newsViewService.sectionNav(""));
-        model.addAttribute("activeSectionSlug", "");
+        model.addAttribute("categoryNav", newsViewService.categoryNav(""));
+        model.addAttribute("activeCategorySlug", "");
         model.addAttribute("view", newsViewService.home());
-        model.addAttribute("sections", newsViewService.wikiSections());
+        model.addAttribute("categories", newsViewService.wikiCategories());
         model.addAttribute("majorCategories", newsViewService.majorCategories());
         model.addAttribute("subcategories", newsViewService.subcategories());
         model.addAttribute("pages", newsViewService.recentWikiPages(30));

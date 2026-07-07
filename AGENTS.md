@@ -51,8 +51,9 @@
   abstraction을 미리 만들지 않는다.
 - YAGNI, KISS, DRY를 따른다. 지금 필요한 URL import, raw 저장, 위키 데이터 생성,
   조회 화면에 필요한 코드만 만든다.
-- `wiki_sections.fixed=1`은 대분류로 사용한다. 상단 navigation은 대분류만 표시한다.
-- `wiki_sections.fixed=0`은 소분류로 사용한다. Codex는 위키 작성 중 소분류를 자연스럽게 생성, 수정, 삭제할 수 있다.
+- `wiki_categories.fixed=1`은 대분류로 사용한다. 상단 navigation은 대분류만 표시한다.
+- `wiki_categories.fixed=0`은 소분류로 사용한다. Codex는 위키 작성 중 소분류를 자연스럽게 생성, 수정, 삭제할 수 있다.
+- 위키 문서의 소분류 FK 이름은 `subcategory_id`다. 화면 표시 이름과 DB/API 이름이 어긋나지 않도록 `section_id` 같은 옛 이름을 새 코드에 추가하지 않는다.
 
 ## 검증
 

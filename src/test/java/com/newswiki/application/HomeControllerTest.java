@@ -1,11 +1,11 @@
 package com.newswiki.application;
 
-import com.newswiki.dto.SectionNavItem;
+import com.newswiki.dto.CategoryNavItem;
 import com.newswiki.dto.HomeView;
 import com.newswiki.dto.ArticleListItem;
 import com.newswiki.dto.WikiPageDetail;
 import com.newswiki.dto.WikiPageListItem;
-import com.newswiki.dto.WikiSection;
+import com.newswiki.dto.WikiCategory;
 import com.newswiki.service.NewsViewService;
 import org.junit.jupiter.api.Test;
 import org.springframework.ui.ExtendedModelMap;
@@ -17,10 +17,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 class HomeControllerTest {
     private final NewsViewService newsViewService = new NewsViewService(null, null) {
         @Override
-        public List<SectionNavItem> sectionNav(String activeSlug) {
+        public List<CategoryNavItem> categoryNav(String activeSlug) {
             return List.of(
-                    new SectionNavItem("industry-ai", "산업·AI", "industry-ai".equals(activeSlug)),
-                    new SectionNavItem("world", "국제", "world".equals(activeSlug))
+                    new CategoryNavItem("industry-ai", "산업·AI", "industry-ai".equals(activeSlug)),
+                    new CategoryNavItem("world", "국제", "world".equals(activeSlug))
             );
         }
 
@@ -35,8 +35,8 @@ class HomeControllerTest {
         }
 
         @Override
-        public List<WikiSection> wikiSections() {
-            return List.of(new WikiSection(1, "industry-ai", "산업·AI", "AI 흐름", 10));
+        public List<WikiCategory> wikiCategories() {
+            return List.of(new WikiCategory(1, "industry-ai", "산업·AI", "AI 흐름", 10));
         }
 
         @Override
@@ -45,7 +45,7 @@ class HomeControllerTest {
         }
 
         @Override
-        public List<WikiPageListItem> wikiPagesBySection(String sectionSlug) {
+        public List<WikiPageListItem> wikiPagesByCategory(String categorySlug) {
             return List.of(new WikiPageListItem(1, "gpu-power", "GPU 전력", "요약", 90, "now"));
         }
 
@@ -56,23 +56,23 @@ class HomeControllerTest {
     };
 
     @Test
-    void homeUsesDatabaseSectionNav() {
+    void homeUsesDatabaseCategoryNav() {
         var model = new ExtendedModelMap();
         var viewName = new HomeController(newsViewService).home(model);
 
         assertThat(viewName).isEqualTo("pages/home");
-        assertThat(model.get("sectionNav").toString()).contains("산업·AI", "국제");
+        assertThat(model.get("categoryNav").toString()).contains("산업·AI", "국제");
         assertThat(model.get("pages").toString()).contains("GPU 전력");
     }
 
     @Test
-    void sectionUsesDatabaseSectionNav() {
+    void categoryUsesDatabaseCategoryNav() {
         var model = new ExtendedModelMap();
-        var viewName = new SectionController(newsViewService).section("industry-ai", model);
+        var viewName = new CategoryController(newsViewService).category("industry-ai", model);
 
-        assertThat(viewName).isEqualTo("pages/sections");
-        assertThat(model.get("sectionTitle")).isEqualTo("산업·AI");
-        assertThat(model.get("sectionNav").toString()).contains("active=true");
+        assertThat(viewName).isEqualTo("pages/categories");
+        assertThat(model.get("categoryTitle")).isEqualTo("산업·AI");
+        assertThat(model.get("categoryNav").toString()).contains("active=true");
         assertThat(model.get("pages").toString()).contains("GPU 전력");
     }
 

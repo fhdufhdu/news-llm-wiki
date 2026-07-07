@@ -2,7 +2,7 @@ package com.newswiki.repository;
 
 import com.newswiki.dto.WikiPageDetail;
 import com.newswiki.dto.WikiPageListItem;
-import com.newswiki.dto.WikiSection;
+import com.newswiki.dto.WikiCategory;
 import com.newswiki.dto.WikiSourceRef;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
@@ -17,48 +17,48 @@ public class WikiPageRepository {
     private final EntityManager entityManager;
 
     @Transactional(readOnly = true)
-    public List<WikiSection> findSections() {
+    public List<WikiCategory> findCategories() {
         return entityManager.createNativeQuery("""
                 select id, slug, title, summary, display_order
-                  from wiki_sections
+                  from wiki_categories
                  where status = 'ACTIVE'
                  order by display_order asc, title asc
                 """)
                 .getResultStream()
-                .map(this::section)
+                .map(this::category)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<WikiSection> findFixedNavSections() {
+    public List<WikiCategory> findFixedNavCategories() {
         return entityManager.createNativeQuery("""
                 select id, slug, title, summary, display_order
-                  from wiki_sections
+                  from wiki_categories
                  where status = 'ACTIVE'
                    and fixed = 1
                  order by display_order asc, title asc
                 """)
                 .getResultStream()
-                .map(this::section)
+                .map(this::category)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<WikiSection> findMajorCategories() {
-        return findFixedNavSections();
+    public List<WikiCategory> findMajorCategories() {
+        return findFixedNavCategories();
     }
 
     @Transactional(readOnly = true)
-    public List<WikiSection> findSubcategories() {
+    public List<WikiCategory> findSubcategories() {
         return entityManager.createNativeQuery("""
                 select id, slug, title, summary, display_order
-                  from wiki_sections
+                  from wiki_categories
                  where status = 'ACTIVE'
                    and fixed = 0
                  order by display_order asc, title asc
                 """)
                 .getResultStream()
-                .map(this::section)
+                .map(this::category)
                 .toList();
     }
 
@@ -111,17 +111,17 @@ public class WikiPageRepository {
     }
 
     @Transactional(readOnly = true)
-    public List<WikiPageListItem> findPagesBySection(String sectionSlug) {
+    public List<WikiPageListItem> findPagesByCategory(String categorySlug) {
         return entityManager.createNativeQuery("""
                 select p.id, p.slug, p.title, p.summary, p.importance, p.updated_at
                   from wiki_pages p
-                  join wiki_sections s on s.id = p.major_category_id or s.id = p.section_id
-                 where s.slug = :sectionSlug
+                  join wiki_categories s on s.id = p.major_category_id or s.id = p.subcategory_id
+                 where s.slug = :categorySlug
                    and s.status = 'ACTIVE'
                    and p.status = 'ACTIVE'
                  order by p.importance desc, p.updated_at desc, p.title asc
                 """)
-                .setParameter("sectionSlug", sectionSlug)
+                .setParameter("categorySlug", categorySlug)
                 .getResultStream()
                 .map(this::pageListItem)
                 .toList();
@@ -195,9 +195,9 @@ public class WikiPageRepository {
                 .toList();
     }
 
-    private WikiSection section(Object row) {
+    private WikiCategory category(Object row) {
         Object[] values = (Object[]) row;
-        return new WikiSection(
+        return new WikiCategory(
                 longValue(values[0]),
                 stringValue(values[1]),
                 stringValue(values[2]),

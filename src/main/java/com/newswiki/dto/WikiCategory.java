@@ -1,6 +1,6 @@
 package com.newswiki.dto;
 
-public record WikiSection(
+public record WikiCategory(
         long id,
         String slug,
         String title,

@@ -28,12 +28,13 @@ class WikiSchemaMigrationTest {
 
         assertThat(tableNames).contains(
                 "article_raw_sources",
-                "wiki_sections",
+                "wiki_categories",
                 "wiki_pages",
                 "wiki_page_sources",
                 "wiki_revisions",
                 "wiki_runs"
         );
+        assertThat(tableNames).doesNotContain("sections", "section_summaries", "wiki_sections");
     }
 
     @Test
@@ -60,10 +61,13 @@ class WikiSchemaMigrationTest {
         ));
 
         assertThat(columnNames).contains("major_category_id");
+        assertThat(columnNames).contains("subcategory_id");
+        assertThat(columnNames).doesNotContain("section_id");
         assertThatThrownBy(() -> jdbc.update("""
                 insert into wiki_pages(slug, title, summary, body, importance, status, created_at, updated_at)
                 values('missing-major', '대분류 없음', '', '', 50, 'ACTIVE', datetime('now'), datetime('now'))
                 """))
                 .hasMessageContaining("wiki page major_category_id is required");
     }
+
 }

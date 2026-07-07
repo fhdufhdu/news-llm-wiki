@@ -21,8 +21,8 @@ public class JobController {
     @GetMapping("/jobs")
     public String jobs(Model model) {
         var view = jobService.jobsView();
-        model.addAttribute("sectionNav", newsViewService.sectionNav(""));
-        model.addAttribute("activeSectionSlug", "");
+        model.addAttribute("categoryNav", newsViewService.categoryNav(""));
+        model.addAttribute("activeCategorySlug", "");
         model.addAttribute("jobRuns", view.runs());
         model.addAttribute("jobLogs", view.logs());
         model.addAttribute("jobLogText", view.logText());

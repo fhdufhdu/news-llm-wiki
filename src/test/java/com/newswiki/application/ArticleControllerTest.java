@@ -2,7 +2,7 @@ package com.newswiki.application;
 
 import com.newswiki.repository.ArticleRepository;
 import com.newswiki.service.NewsViewService;
-import com.newswiki.dto.SectionNavItem;
+import com.newswiki.dto.CategoryNavItem;
 import org.junit.jupiter.api.Test;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.web.server.ResponseStatusException;
@@ -17,7 +17,7 @@ class ArticleControllerTest {
     void returnsArticleDetailViewForExistingArticle() {
         var controller = new ArticleController(new NewsViewService(null, null) {
             @Override
-            public List<SectionNavItem> sectionNav(String activeSlug) {
+            public List<CategoryNavItem> categoryNav(String activeSlug) {
                 return List.of();
             }
 

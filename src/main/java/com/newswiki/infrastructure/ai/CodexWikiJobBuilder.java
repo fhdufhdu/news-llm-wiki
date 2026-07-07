@@ -43,9 +43,9 @@ public class CodexWikiJobBuilder {
                 - Your job is to maintain durable wiki data in SQLite.
                 - 기사 1건마다 SQLite에 즉시 반영한다.
                 - Process one article at a time and commit each article to SQLite immediately.
-                - Major categories are wiki_sections.fixed=1. They are broad categories such as politics, economy,
+                - Major categories are wiki_categories.fixed=1. They are broad categories such as politics, economy,
                   society, world, technology, culture, sports, and other. Treat them as fixed navigation data.
-                - Subcategories are wiki_sections.fixed=0. They are yours to create, update, and delete naturally
+                - Subcategories are wiki_categories.fixed=0. They are yours to create, update, and delete naturally
                   while maintaining wiki pages.
                 - Do not create article-summary-only buckets. Subcategories should describe durable knowledge flows.
                 - Every wiki page MUST have a major category. Pick exactly one major category from list_major_categories().
@@ -154,61 +154,52 @@ public class CodexWikiJobBuilder {
                     text = re.sub(r'\\n{3,}', '\\n\\n', soup.get_text('\\n', strip=True))
                     return text[:20000]
 
-                def list_sections():
+                def list_categories():
                     with connect() as con:
-                        return [dict(r) for r in con.execute("select * from wiki_sections order by display_order, title")]
+                        return [dict(r) for r in con.execute("select * from wiki_categories order by display_order, title")]
 
                 def list_major_categories():
                     with connect() as con:
                         return [dict(r) for r in con.execute(
-                            "select * from wiki_sections where fixed=1 and status='ACTIVE' order by display_order, title"
+                            "select * from wiki_categories where fixed=1 and status='ACTIVE' order by display_order, title"
                         )]
 
                 def list_subcategories():
                     with connect() as con:
                         return [dict(r) for r in con.execute(
-                            "select * from wiki_sections where fixed=0 and status='ACTIVE' order by display_order, title"
+                            "select * from wiki_categories where fixed=0 and status='ACTIVE' order by display_order, title"
                         )]
 
                 def create_subcategory(title, summary='', order_hint=None):
                     slug = slugify(title)
                     with connect() as con:
                         con.execute(\"\"\"
-                            insert into wiki_sections(slug,title,summary,display_order,status,fixed,created_at,updated_at)
+                            insert into wiki_categories(slug,title,summary,display_order,status,fixed,created_at,updated_at)
                             values (?,?,?,?, 'ACTIVE', 0, ?, ?)
                         \"\"\", (slug, title, summary, order_hint or 1000, now(), now()))
                         return con.execute("select last_insert_rowid()").fetchone()[0]
 
-                def create_section(title, summary='', order_hint=None):
-                    return create_subcategory(title, summary, order_hint)
-
-                def update_subcategory(section_id, title=None, summary=None, display_order=None):
+                def update_subcategory(subcategory_id, title=None, summary=None, display_order=None):
                     with connect() as con:
-                        row = con.execute("select * from wiki_sections where id=?", (section_id,)).fetchone()
+                        row = con.execute("select * from wiki_categories where id=?", (subcategory_id,)).fetchone()
                         if row is None:
-                            raise ValueError(f"subcategory not found: {section_id}")
+                            raise ValueError(f"subcategory not found: {subcategory_id}")
                         if row['fixed']:
-                            raise ValueError(f"major category cannot be updated by Codex: {section_id}")
+                            raise ValueError(f"major category cannot be updated by Codex: {subcategory_id}")
                         con.execute(\"\"\"
-                            update wiki_sections set title=?, summary=?, display_order=?, updated_at=? where id=?
+                            update wiki_categories set title=?, summary=?, display_order=?, updated_at=? where id=?
                         \"\"\", (title or row['title'], summary if summary is not None else row['summary'],
-                              display_order if display_order is not None else row['display_order'], now(), section_id))
+                              display_order if display_order is not None else row['display_order'], now(), subcategory_id))
 
-                def update_section(section_id, title=None, summary=None, display_order=None):
-                    return update_subcategory(section_id, title, summary, display_order)
-
-                def delete_subcategory(section_id, move_pages_to=None):
+                def delete_subcategory(subcategory_id, move_pages_to=None):
                     with connect() as con:
-                        row = con.execute("select * from wiki_sections where id=?", (section_id,)).fetchone()
+                        row = con.execute("select * from wiki_categories where id=?", (subcategory_id,)).fetchone()
                         if row is None:
-                            raise ValueError(f"subcategory not found: {section_id}")
+                            raise ValueError(f"subcategory not found: {subcategory_id}")
                         if row['fixed']:
-                            raise ValueError(f"major category cannot be deleted by Codex: {section_id}")
-                        con.execute("update wiki_pages set section_id=? where section_id=?", (move_pages_to, section_id))
-                        con.execute("delete from wiki_sections where id=?", (section_id,))
-
-                def delete_section(section_id, move_pages_to=None):
-                    return delete_subcategory(section_id, move_pages_to)
+                            raise ValueError(f"major category cannot be deleted by Codex: {subcategory_id}")
+                        con.execute("update wiki_pages set subcategory_id=? where subcategory_id=?", (move_pages_to, subcategory_id))
+                        con.execute("delete from wiki_categories where id=?", (subcategory_id,))
 
                 def search_pages(query):
                     like = f"%{query}%"
@@ -225,7 +216,7 @@ public class CodexWikiJobBuilder {
 
                 def validate_major_category(con, major_category_id):
                     row = con.execute(
-                        "select * from wiki_sections where id=? and fixed=1 and status='ACTIVE'",
+                        "select * from wiki_categories where id=? and fixed=1 and status='ACTIVE'",
                         (major_category_id,)
                     ).fetchone()
                     if row is None:
@@ -235,7 +226,7 @@ public class CodexWikiJobBuilder {
                     if subcategory_id is None:
                         return
                     row = con.execute(
-                        "select * from wiki_sections where id=? and fixed=0 and status='ACTIVE'",
+                        "select * from wiki_categories where id=? and fixed=0 and status='ACTIVE'",
                         (subcategory_id,)
                     ).fetchone()
                     if row is None:
@@ -247,10 +238,10 @@ public class CodexWikiJobBuilder {
                         validate_major_category(con, major_category_id)
                         validate_subcategory(con, subcategory_id)
                         con.execute(\"\"\"
-                            insert into wiki_pages(major_category_id,section_id,slug,title,summary,body,importance,status,created_at,updated_at)
+                            insert into wiki_pages(major_category_id,subcategory_id,slug,title,summary,body,importance,status,created_at,updated_at)
                             values (?,?,?,?,?,?,?, 'ACTIVE', ?, ?)
                             on conflict(slug) do update set
-                                major_category_id=excluded.major_category_id, section_id=excluded.section_id,
+                                major_category_id=excluded.major_category_id, subcategory_id=excluded.subcategory_id,
                                 title=excluded.title, summary=excluded.summary,
                                 body=excluded.body, importance=excluded.importance, updated_at=excluded.updated_at
                         \"\"\", (major_category_id, subcategory_id, slug, title, summary, body, importance, now(), now()))
